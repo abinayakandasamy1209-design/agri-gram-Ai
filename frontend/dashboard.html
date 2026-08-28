@@ -1,0 +1,1738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌾 Agri Gram AI</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', -apple-system, sans-serif; }
+
+  :root {
+    --primary: #2e7d32;
+    --primary-dark: #1b5e20;
+    --primary-light: #4caf50;
+    --bg: #f5f7f5;
+    --sidebar-bg: #ffffff;
+    --content-bg: #f0f4f0;
+    --card-bg: #ffffff;
+    --text: #1a1a1a;
+    --text-secondary: #666;
+    --text-muted: #999;
+    --border: #e8ece8;
+    --shadow: 0 2px 8px rgba(0,0,0,0.06);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+    --accent: #ffca28;
+    --danger: #ef5350;
+    --success: #4caf50;
+    --radius: 12px;
+  }
+
+  /* Dark Theme */
+  body.dark-mode {
+    --bg: #1a2e1a;
+    --sidebar-bg: #1b3a1b;
+    --content-bg: #0f1f0f;
+    --card-bg: #1e3d1e;
+    --text: #e8f5e9;
+    --text-secondary: #a5d6a7;
+    --text-muted: #81c784;
+    --border: #2e5a2e;
+    --shadow: 0 2px 8px rgba(0,0,0,0.3);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+  }
+
+  body { background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; }
+
+  /* ===== TOP NAVBAR ===== */
+  .navbar { position:fixed; top:0; left:0; right:0; height:60px; background:var(--sidebar-bg);
+    border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 20px;
+    z-index:1000; box-shadow:var(--shadow); }
+  .nav-logo { display:flex; align-items:center; gap:10px; }
+  .nav-logo img, .nav-logo .logo-icon { width:32px; height:32px; }
+  .nav-logo .logo-icon { font-size:28px; }
+  .nav-logo h1 { font-size:18px; color:var(--primary-dark); font-weight:700; }
+  .nav-logo p { font-size:11px; color:var(--text-muted); margin-top:-2px; }
+  .nav-spacer { flex:1; }
+  .nav-right { display:flex; align-items:center; gap:14px; }
+
+  /* Language Button */
+  .lang-btn { background:var(--card-bg); border:1px solid var(--border); padding:7px 14px;
+    border-radius:20px; cursor:pointer; font-size:13px; color:var(--text); font-weight:500;
+    transition:0.2s; width:auto; display:flex; align-items:center; gap:6px; }
+  .lang-btn:hover { background:var(--content-bg); border-color:var(--primary-light); }
+  .lang-dropdown { display:none; position:absolute; top:50px; right:80px; z-index:9999;
+    background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+    overflow:hidden; box-shadow:var(--shadow-lg); min-width:180px; }
+  .lang-dropdown.show { display:block; animation:dropIn 0.2s; }
+  .lang-option { padding:10px 16px; cursor:pointer; font-size:13px; color:var(--text);
+    transition:0.15s; border-bottom:1px solid var(--border); }
+  .lang-option:last-child { border-bottom:none; }
+  .lang-option:hover { background:var(--content-bg); }
+  .lang-option.active { color:var(--primary); font-weight:600; }
+
+  /* Profile Button */
+  .profile-btn { display:flex; align-items:center; gap:9px; cursor:pointer;
+    background:var(--card-bg); border:1px solid var(--border);
+    padding:6px 14px 6px 6px; border-radius:50px; transition:0.2s; }
+  .profile-btn:hover { border-color:var(--primary-light); box-shadow:0 2px 8px rgba(46,125,50,0.1); }
+  .profile-btn .avatar { width:34px; height:34px; border-radius:50%; background:var(--primary);
+    display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700;
+    color:#fff; }
+  .profile-btn .name { font-size:13px; font-weight:600; color:var(--text); }
+  .profile-btn .arrow { font-size:10px; color:var(--text-muted); transition:0.3s; }
+  .profile-btn.open .arrow { transform:rotate(180deg); }
+
+  /* Profile Dropdown */
+  .profile-dropdown { display:none; position:absolute; top:52px; right:20px; min-width:230px;
+    background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius);
+    overflow:hidden; box-shadow:var(--shadow-lg); z-index:9999; }
+  .profile-dropdown.show { display:block; animation:dropIn 0.2s; }
+  @keyframes dropIn { from{opacity:0;transform:translateY(-6px);} to{opacity:1;transform:translateY(0);} }
+  .profile-dropdown .profile-header { padding:14px 16px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:12px; }
+  .profile-dropdown .profile-header .avatar-lg { width:40px; height:40px; border-radius:50%;
+    background:var(--primary); display:flex; align-items:center; justify-content:center;
+    font-size:17px; font-weight:700; color:#fff; }
+  .profile-dropdown .profile-header .info h4 { font-size:14px; color:var(--text); font-weight:600; }
+  .profile-dropdown .profile-header .info p { font-size:11px; color:var(--text-muted); }
+  .profile-dropdown .menu-item { display:flex; align-items:center; gap:12px; padding:11px 16px;
+    cursor:pointer; transition:0.15s; font-size:13px; color:var(--text); }
+  .profile-dropdown .menu-item:hover { background:var(--content-bg); }
+  .profile-dropdown .menu-item .icon { font-size:16px; width:22px; text-align:center; }
+  .profile-dropdown .divider { height:1px; background:var(--border); margin:2px 12px; }
+  .profile-dropdown .menu-item.logout { color:var(--danger); }
+  .profile-dropdown .menu-item.logout:hover { background:rgba(239,83,80,0.06); }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar { position:fixed; top:60px; left:0; bottom:0; width:220px; background:var(--sidebar-bg);
+    border-right:1px solid var(--border); padding:16px 10px; overflow-y:auto; z-index:900;
+    transition:0.3s; }
+  .sidebar-item { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px;
+    cursor:pointer; font-size:13px; font-weight:500; color:var(--text-secondary);
+    transition:0.15s; margin-bottom:2px; }
+  .sidebar-item:hover { background:var(--content-bg); color:var(--text); }
+  .sidebar-item.active { background:var(--primary); color:#fff; font-weight:600; }
+  .sidebar-item .s-icon { font-size:16px; width:22px; text-align:center; }
+
+  /* ===== MAIN CONTENT ===== */
+  .main-content { margin-left:220px; margin-top:60px; padding:24px; min-height:calc(100vh - 60px);
+    background:var(--content-bg); }
+  .panel { display:none; animation:fadeIn 0.3s; }
+  .panel.active { display:block; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px);} to{opacity:1;} }
+
+  /* Panel inner styling */
+  .panel h2 { font-size:20px; color:var(--text); margin-bottom:16px; font-weight:700; }
+  .panel .hint { font-size:12px; color:var(--text-muted); margin-top:4px; }
+  .panel label { font-size:13px; color:var(--text-secondary); display:block; margin-top:10px; }
+  .panel input, .panel select, .panel textarea { width:100%; padding:11px 14px; margin:6px 0;
+    border-radius:8px; border:1px solid var(--border); font-size:14px; background:var(--card-bg);
+    color:var(--text); outline:none; transition:0.2s; }
+  .panel input:focus, .panel select:focus, .panel textarea:focus { border-color:var(--primary-light);
+    box-shadow:0 0 0 3px rgba(76,175,80,0.1); }
+  .panel button { width:100%; padding:11px; margin:8px 0; border-radius:8px; border:none;
+    font-size:14px; background:var(--primary); color:#fff; font-weight:600; cursor:pointer;
+    transition:0.2s; }
+  .panel button:hover { background:var(--primary-dark); transform:translateY(-1px);
+    box-shadow:0 4px 12px rgba(46,125,50,0.2); }
+  .result { background:var(--content-bg); border:1px solid var(--border); border-radius:var(--radius);
+    padding:16px; margin-top:14px; }
+  .card { background:var(--card-bg); border-radius:10px; padding:14px; margin:8px 0;
+    border-left:4px solid var(--primary-light); box-shadow:var(--shadow); }
+  .card h4 { color:var(--primary); margin-bottom:6px; font-size:14px; }
+  .big { font-size:22px; font-weight:700; color:var(--primary); }
+  table { width:100%; border-collapse:collapse; margin-top:8px; }
+  th,td { padding:9px; text-align:left; border-bottom:1px solid var(--border); font-size:13px; }
+  th { color:var(--primary); font-weight:600; }
+  .chat-box { max-height:300px; overflow-y:auto; margin-bottom:12px; }
+  .msg { padding:10px 14px; border-radius:14px; margin:6px 0; max-width:80%; font-size:13px; }
+  .msg.user { background:var(--primary); color:#fff; margin-left:auto; }
+  .msg.bot { background:var(--content-bg); border:1px solid var(--border); }
+  img.preview { max-width:150px; border-radius:10px; margin:8px 0; }
+  .mic { background:var(--danger); color:#fff; }
+  .mic.listening { animation:pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.6;} }
+  @keyframes fade { from{opacity:0;transform:translateY(10px);} to{opacity:1;} }
+
+  /* Mobile responsive */
+  @media (max-width:768px) {
+    .sidebar { transform:translateX(-100%); width:260px; }
+    .sidebar.open { transform:translateX(0); }
+    .main-content { margin-left:0; }
+    .hamburger { display:block !important; }
+  }
+  .hamburger { display:none; background:none; border:none; font-size:22px; cursor:pointer;
+    color:var(--text); padding:8px; width:auto; margin-right:10px; }
+</style>
+</head>
+<body>
+
+<script>
+// Check if logged in
+if (!localStorage.getItem('agri_user')) {
+  window.location.href = 'index.html';
+}
+function logout() { localStorage.removeItem('agri_user'); window.location.href = 'index.html'; }
+</script>
+
+<!-- TOP NAVBAR -->
+<nav class="navbar">
+  <button class="hamburger" onclick="toggleSidebar()">☰</button>
+  <div class="nav-logo">
+    <span class="logo-icon">🌾</span>
+    <div>
+      <h1>Agri Gram AI</h1>
+      <p>Smart Farming Assistant</p>
+    </div>
+  </div>
+  <div class="nav-spacer"></div>
+  <div class="nav-right">
+    <button class="lang-btn" onclick="toggleLangMenu()">🌐 English ▾</button>
+    <div class="lang-dropdown" id="langDropdown">
+      <div class="lang-option active" onclick="setLang('en','English')">🇮🇳 English</div>
+      <div class="lang-option" onclick="setLang('ta','தமிழ்')">🇮🇳 தமிழ் (Tamil)</div>
+      <div class="lang-option" onclick="setLang('hi','हिन्दी')">🇮🇳 हिन्दी (Hindi)</div>
+      <div class="lang-option" onclick="setLang('te','తెలుగు')">🇮🇳 తెలుగు (Telugu)</div>
+      <div class="lang-option" onclick="setLang('kn','ಕನ್ನಡ')">🇮🇳 ಕನ್ನಡ (Kannada)</div>
+      <div class="lang-option" onclick="setLang('ml','മലയാളം')">🇮🇳 മലయാളം (Malayalam)</div>
+    </div>
+    <div class="profile-btn" onclick="toggleProfileMenu()" id="profileBtn">
+      <div class="avatar" id="profileAvatar">A</div>
+      <span class="name" id="profileName">User</span>
+      <span class="arrow">▾</span>
+    </div>
+    <div class="profile-dropdown" id="profileDropdown">
+      <div class="profile-header">
+        <div class="avatar-lg" id="profileAvatarLg">A</div>
+        <div class="info">
+          <h4 id="profileFullName">User</h4>
+          <p id="profileRole">Farmer</p>
+        </div>
+      </div>
+      <div class="menu-item" onclick="showProfileSection('myprofile')"><span class="icon">👤</span> My Profile</div>
+      <div class="menu-item" onclick="showProfileSection('settings')"><span class="icon">⚙️</span> Settings</div>
+      <div class="menu-item" onclick="showProfileSection('notifications')"><span class="icon">🔔</span> Notifications</div>
+      <div class="menu-item" onclick="showProfileSection('help')"><span class="icon">❓</span> Help & Support</div>
+      <div class="divider"></div>
+      <div class="menu-item" onclick="toggleThemeFromMenu()"><span class="icon" id="themeIcon">🌙</span> <span id="themeLabel">Dark Mode</span></div>
+      <div class="divider"></div>
+      <div class="menu-item logout" onclick="logout()"><span class="icon">🚪</span> Logout</div>
+    </div>
+  </div>
+</nav>
+
+<!-- LEFT SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-item active" onclick="show('dashboard',this)"><span class="s-icon">🏠</span> Dashboard</div>
+  <div class="sidebar-item" onclick="show('soil',this)"><span class="s-icon">📸</span> Soil→Crop</div>
+  <div class="sidebar-item" onclick="show('weather',this)"><span class="s-icon">🌦️</span> Weather</div>
+  <div class="sidebar-item" onclick="show('water',this)"><span class="s-icon">💧</span> Water</div>
+  <div class="sidebar-item" onclick="show('calendar',this)"><span class="s-icon">📅</span> Calendar</div>
+  <div class="sidebar-item" onclick="show('disease',this)"><span class="s-icon">🐛</span> Disease</div>
+  <div class="sidebar-item" onclick="show('chat',this)"><span class="s-icon">🗣️</span> Chat</div>
+  <div class="sidebar-item" onclick="show('profit',this)"><span class="s-icon">💰</span> Profit</div>
+  <div class="sidebar-item" onclick="show('fertilizer',this)"><span class="s-icon">🌱</span> Fertilizer</div>
+  <div class="sidebar-item" onclick="show('rotation',this)"><span class="s-icon">🔄</span> Rotation</div>
+  <div class="sidebar-item" onclick="show('yield',this)"><span class="s-icon">📊</span> Yield</div>
+  <div class="sidebar-item" onclick="show('alerts',this)"><span class="s-icon">🔔</span> Alerts</div>
+  <div class="sidebar-item" onclick="show('schemes',this)"><span class="s-icon">📱</span> Schemes</div>
+  <div class="sidebar-item" onclick="show('analytics',this)"><span class="s-icon">📈</span> Analytics</div>
+  <div class="sidebar-item" onclick="show('report',this)"><span class="s-icon">📄</span> PDF Report</div>
+  <div class="sidebar-item" onclick="show('sms',this)"><span class="s-icon">💬</span> WhatsApp Alert</div>
+  <div class="sidebar-item" onclick="show('climate',this)"><span class="s-icon">🛰️</span> Climate Risk</div>
+  <div class="sidebar-item" onclick="show('iot',this)"><span class="s-icon">🌡️</span> IoT Live</div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<div class="main-content">
+  <div class="panel" id="dashboard">
+    <h2>🏠 Welcome to Agri Gram AI</h2>
+    <p style="color:var(--text-secondary);margin-bottom:20px;">Smart Farming Assistant — by Abinaya K</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px;">
+      <div class="card" style="text-align:center;border-left:4px solid #4caf50;">
+        <h4>🌱 Active Crops</h4>
+        <p class="big">5</p>
+      </div>
+      <div class="card" style="text-align:center;border-left:4px solid #2196f3;">
+        <h4>🌦️ Weather</h4>
+        <p class="big">28°C</p>
+        <p class="hint">Partly Cloudy</p>
+      </div>
+      <div class="card" style="text-align:center;border-left:4px solid #00bcd4;">
+        <h4>💧 Soil Moisture</h4>
+        <p class="big">65%</p>
+        <p class="hint">Good</p>
+      </div>
+      <div class="card" style="text-align:center;border-left:4px solid #8bc34a;">
+        <h4>🌿 Land Area</h4>
+        <p class="big">12.5</p>
+        <p class="hint">Acres</p>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="card">
+        <h4>📢 Recent Alerts</h4>
+        <p style="margin:6px 0;font-size:13px;color:var(--text-secondary);">🚨 High Pest Risk Detected — 2h ago</p>
+        <p style="margin:6px 0;font-size:13px;color:var(--text-secondary);">💧 Irrigation Reminder — 5h ago</p>
+        <p style="margin:6px 0;font-size:13px;color:var(--text-secondary);">🌧️ Weather Update — 1d ago</p>
+      </div>
+      <div class="card">
+        <h4>📊 Quick Actions</h4>
+        <button onclick="show('soil',document.querySelector('[onclick*=soil]'))">📸 Analyze Soil</button>
+        <button onclick="show('weather',document.querySelector('[onclick*=weather]'))">🌦️ Check Weather</button>
+        <button onclick="show('chat',document.querySelector('[onclick*=chat]'))">💬 Ask AI Advisor</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="soil">
+    <h2>📸 Soil Photo → Crop Recommendation</h2>
+    <p class="hint">Upload a soil/land photo. AI detects soil type & suggests best crops.</p>
+    <input type="file" id="soilImg" accept="image/*" onchange="preview('soilImg','soilPrev')">
+    <img id="soilPrev" class="preview" style="display:none">
+    <select id="soilSeason">
+      <option value="kharif">Kharif (June-Oct, Monsoon)</option>
+      <option value="rabi">Rabi (Oct-March, Winter)</option>
+      <option value="zaid">Zaid (March-June, Summer)</option>
+    </select>
+    <button onclick="analyzeSoil()">🔍 Analyze Soil</button>
+    <div id="soilResult"></div>
+  </div>
+
+  <div class="panel" id="weather">
+    <h2>🌦️ Weather Forecast + Advice</h2>
+    <input type="text" id="city" placeholder="City or click Detect 📍" value="Coimbatore">
+    <div style="display:flex;gap:8px;">
+      <button onclick="getWeather()" style="flex:1;">🌤️ Get 7-Day Forecast</button>
+      <button onclick="detectLocation()" style="flex:0.6;background:#4caf50;color:#fff;">📍 Detect Location</button>
+    </div>
+    <div id="weatherResult"></div>
+  </div>
+
+  <div class="panel" id="water">
+    <h2>💧 Smart Water Requirement</h2>
+    <label>Crop</label><select id="waterCrop"></select>
+    <label>Area (acres)</label><input type="number" id="area" value="1">
+    <label>Temperature °C</label><input type="number" id="temp" value="30">
+    <label>Rainfall mm</label><input type="number" id="rain" value="0">
+    <button onclick="calcWater()">💧 Calculate Water Need</button>
+    <div id="waterResult"></div>
+  </div>
+
+  <div class="panel" id="calendar">
+    <h2>📅 Crop Calendar / Timeline</h2>
+    <select id="calCrop"></select>
+    <button onclick="getCalendar()">📅 Show Timeline</button>
+    <div id="calResult"></div>
+  </div>
+
+  <div class="panel" id="disease">
+    <h2>🐛 Plant Disease Detection</h2>
+    <p class="hint">Upload a leaf photo. AI checks plant health & suggests treatment.</p>
+    <input type="file" id="leafImg" accept="image/*" onchange="preview('leafImg','leafPrev')">
+    <img id="leafPrev" class="preview" style="display:none">
+    <button onclick="detectDisease()">🔬 Detect Disease</button>
+    <div id="diseaseResult"></div>
+  </div>
+
+  <div class="panel" id="chat">
+    <h2>🗣️ Tamil AI Chat Assistant</h2>
+    <div class="chat-box" id="chatBox">
+      <div class="msg bot">வணக்கம்! 🌾 நான் Agri Gram AI. தண்ணீர், உரம், பூச்சி, பருவம் பற்றி கேளுங்கள்.</div>
+    </div>
+    <input type="text" id="chatInput" placeholder="கேள்வி கேளுங்கள்... (Ask a question)" onkeypress="if(event.key==='Enter')sendChat()">
+    <button onclick="sendChat()">📩 Send</button>
+    <button class="mic" id="micBtn" onclick="startVoice()">🎤 Voice (Tamil/English)</button>
+  </div>
+
+  <div class="panel" id="profit">
+    <h2>💰 Profit Calculator</h2>
+    <label>Crop</label><select id="profitCrop"></select>
+    <label>Area (acres)</label><input type="number" id="profitArea" value="1">
+    <label>Market price ₹/kg (optional)</label><input type="number" id="profitPrice" placeholder="Leave blank for default">
+    <button onclick="calcProfit()">💰 Calculate Profit</button>
+    <div id="profitResult"></div>
+  </div>
+
+  <div class="panel" id="fertilizer">
+    <h2>🌱 Fertilizer & Pesticide Advisor</h2>
+    <select id="fertCrop"></select>
+    <button onclick="getFertilizer()">🌱 Get Advice</button>
+    <div id="fertResult"></div>
+  </div>
+
+  <div class="panel" id="rotation">
+    <h2>🔄 Crop Rotation Planner</h2>
+    <label>Current / Last crop</label><select id="rotCrop"></select>
+    <button onclick="getRotation()">🔄 Suggest Next Crop</button>
+    <div id="rotResult"></div>
+  </div>
+
+  <div class="panel" id="yield">
+    <h2>📊 Yield Prediction</h2>
+    <label>Crop</label><select id="yieldCrop"></select>
+    <label>Area (acres)</label><input type="number" id="yieldArea" value="1">
+    <label>Expected rainfall mm</label><input type="number" id="yieldRain" value="800">
+    <label>Soil quality</label>
+    <select id="yieldSoil">
+      <option value="poor">Poor</option>
+      <option value="average">Average</option>
+      <option value="good" selected>Good</option>
+      <option value="excellent">Excellent</option>
+    </select>
+    <button onclick="predictYield()">📊 Predict Yield</button>
+    <div id="yieldResult"></div>
+  </div>
+
+  <div class="panel" id="alerts">
+    <h2>🔔 Smart Weather Alerts</h2>
+    <label>Temperature °C</label><input type="number" id="alertTemp" value="35">
+    <label>Rainfall mm</label><input type="number" id="alertRain" value="0">
+    <label>Humidity %</label><input type="number" id="alertHum" value="60">
+    <button onclick="getAlerts()">🔔 Check Alerts</button>
+    <div id="alertResult"></div>
+  </div>
+
+  <div class="panel" id="schemes">
+    <h2>📱 Government Schemes for Farmers</h2>
+    <input type="text" id="schemeQuery" placeholder="Search (optional) e.g. loan, insurance">
+    <button onclick="getSchemes()">📱 Show Schemes</button>
+    <div id="schemeResult"></div>
+  </div>
+
+  <div class="panel" id="analytics">
+    <h2>📈 Profit Analytics</h2>
+    <button onclick="loadAnalytics()">📈 Load Profit Comparison Chart</button>
+    <div class="result"><canvas id="profitChart" height="220"></canvas></div>
+    <div id="analyticsNote"></div>
+    <button onclick="loadWaterChart()" style="margin-top:12px">💧 Load Water Comparison Chart</button>
+    <div class="result"><canvas id="waterChart" height="220"></canvas></div>
+  </div>
+
+  <div class="panel" id="report">
+    <h2>📄 Farm Report (PDF)</h2>
+    <p class="hint">Fill details & download a professional PDF report for your farm.</p>
+    <label>Farmer Name</label><input type="text" id="rFarmer" placeholder="Your name">
+    <label>Location</label><input type="text" id="rLocation" value="Coimbatore">
+    <label>Crop</label><select id="rCrop"></select>
+    <label>Soil Type</label><input type="text" id="rSoil" placeholder="e.g. Red Soil">
+    <label>Notes (optional)</label><textarea id="rNotes" placeholder="Any extra notes..."></textarea>
+    <button onclick="downloadReport()">📄 Download PDF Report</button>
+    <div id="reportResult"></div>
+  </div>
+
+  <div class="panel" id="sms">
+    <h2>💬 WhatsApp Alert to Farmer</h2>
+    <p class="hint">Send a farming alert on WhatsApp — free, instant, no setup. Opens WhatsApp with the message ready to send.</p>
+    <label>Farmer's WhatsApp number (10 digit)</label>
+    <input type="text" id="smsPhone" placeholder="9486775570">
+    <label>Crop</label><select id="smsCrop"></select>
+    <label>Alert message / advice</label>
+    <input type="text" id="smsAdvice" value="Rain expected tomorrow - hold irrigation.">
+    <button onclick="sendWhatsApp()">💬 Send WhatsApp Alert</button>
+    <div id="smsResult"></div>
+  </div>
+
+  <div class="panel" id="climate">
+    <h2>🛰️ Climate Risk Score</h2>
+    <p class="hint">Crop-specific climate risk from live 7-day forecast — drought, flood, heat & cold hazards combined into one explainable score.</p>
+    <label>City</label><input type="text" id="climCity" value="Coimbatore">
+    <label>Crop</label><select id="climCrop"></select>
+    <label>Latitude</label><input type="text" id="climLat" value="11.0168">
+    <label>Longitude</label><input type="text" id="climLon" value="76.9558">
+    <div style="display:flex;gap:8px;">
+      <button onclick="getClimateRisk()" style="flex:1;">🛰️ Analyze Climate Risk</button>
+      <button onclick="detectLocationClimate()" style="flex:0.6;background:#4caf50;color:#fff;">📍 Auto Detect</button>
+    </div>
+    <div id="climResult"></div>
+  </div>
+
+  <div class="panel" id="iot">
+    <h2>🌡️ IoT Live Sensor Data</h2>
+    <p class="hint">Real-time data from ESP32 sensors (or simulated). Click "Simulate" to generate test readings.</p>
+    <button onclick="iotSimulate()">⚡ Simulate Sensor Reading</button>
+    <button onclick="iotRefresh()">🔄 Refresh Data</button>
+    <div id="iotLatest"></div>
+    <h4 style="color:#ffe082;margin:16px 0 8px">📈 Sensor History:</h4>
+    <div class="result"><canvas id="iotChart" height="200"></canvas></div>
+    <div id="iotAlerts"></div>
+  </div>
+
+  <div class="panel" id="myprofile">
+    <h2>👤 My Profile</h2>
+    <div class="result">
+      <div style="display:flex;align-items:center;gap:20px;margin-bottom:20px;">
+        <div style="width:80px;height:80px;border-radius:50%;background:#4caf50;display:flex;align-items:center;justify-content:center;font-size:36px;color:#fff;font-weight:700;" id="profileBigAvatar">A</div>
+        <div>
+          <h3 id="profilePageName" style="margin-bottom:4px;">User</h3>
+          <p class="hint" id="profilePageRole">Role: User</p>
+          <p class="hint" id="profilePageLocation">📍 Location: Coimbatore</p>
+        </div>
+      </div>
+      <div class="card">
+        <h4>Account Information</h4>
+        <table>
+          <tr><td><strong>Username:</strong></td><td id="profileUsername">-</td></tr>
+          <tr><td><strong>Name:</strong></td><td id="profileNameField">-</td></tr>
+          <tr><td><strong>Role:</strong></td><td id="profileRoleField">-</td></tr>
+          <tr><td><strong>Location:</strong></td><td id="profileLocationField">-</td></tr>
+        </table>
+      </div>
+      <div class="card" style="margin-top:12px;">
+        <h4>Update Profile</h4>
+        <label>Name:</label>
+        <input type="text" id="editName" placeholder="Enter your name">
+        <label>Location:</label>
+        <input type="text" id="editLocation" placeholder="Enter your location">
+        <button onclick="updateProfile()">💾 Save Changes</button>
+        <div id="profileMsg" class="hint" style="margin-top:8px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="settings">
+    <h2>⚙️ Settings</h2>
+    <div class="result">
+      <div class="card">
+        <h4>🎨 Appearance</h4>
+        <label>Theme:</label>
+        <select onchange="if(this.value==='dark')document.body.classList.remove('light-mode');else document.body.classList.add('light-mode');localStorage.setItem('agri_theme',this.value);">
+          <option value="dark">🌙 Dark Mode</option>
+          <option value="light">☀️ Light Mode</option>
+        </select>
+      </div>
+      <div class="card">
+        <h4>🌐 Language</h4>
+        <label>Preferred Language:</label>
+        <select onchange="setLang(this.value, this.options[this.selectedIndex].text)">
+          <option value="en">English</option>
+          <option value="ta">தமிழ் (Tamil)</option>
+          <option value="hi">हिन्दी (Hindi)</option>
+          <option value="te">తెలుగు (Telugu)</option>
+          <option value="kn">ಕನ್ನಡ (Kannada)</option>
+          <option value="ml">മലയാളം (Malayalam)</option>
+        </select>
+      </div>
+      <div class="card">
+        <h4>🔔 Notification Preferences</h4>
+        <label><input type="checkbox" checked style="width:auto;margin-right:8px;">Weather Alerts</label>
+        <label><input type="checkbox" checked style="width:auto;margin-right:8px;">Irrigation Reminders</label>
+        <label><input type="checkbox" checked style="width:auto;margin-right:8px;">Pest & Disease Warnings</label>
+        <label><input type="checkbox" style="width:auto;margin-right:8px;">Market Price Updates</label>
+      </div>
+      <div class="card">
+        <h4>📏 Units</h4>
+        <label>Temperature:</label>
+        <select><option>°C (Celsius)</option><option>°F (Fahrenheit)</option></select>
+        <label>Area:</label>
+        <select><option>Acres</option><option>Hectares</option><option>Cents</option></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="notifications">
+    <h2>🔔 Notifications</h2>
+    <div class="result">
+      <div class="card" style="border-left-color:#ff5252;">
+        <h4>🚨 High Pest Risk Detected</h4>
+        <p>Fall Armyworm risk is high in your area. Check your paddy field immediately.</p>
+        <p class="hint">2 hours ago</p>
+      </div>
+      <div class="card" style="border-left-color:#2196f3;">
+        <h4>💧 Irrigation Reminder</h4>
+        <p>Your field needs irrigation within the next 24 hours based on soil moisture data.</p>
+        <p class="hint">5 hours ago</p>
+      </div>
+      <div class="card" style="border-left-color:#ff9800;">
+        <h4>🌧️ Weather Update</h4>
+        <p>Moderate rainfall expected tomorrow. Plan your fertilizer application accordingly.</p>
+        <p class="hint">1 day ago</p>
+      </div>
+      <div class="card" style="border-left-color:#4caf50;">
+        <h4>✅ Crop Harvest Ready</h4>
+        <p>Your paddy crop in Field A is expected to be ready for harvest in 5 days.</p>
+        <p class="hint">2 days ago</p>
+      </div>
+      <div class="card" style="border-left-color:#9c27b0;">
+        <h4>📢 New Government Scheme</h4>
+        <p>PM-KISAN 15th installment is being released. Check eligibility in Schemes section.</p>
+        <p class="hint">3 days ago</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="help">
+    <h2>❓ Help & Support</h2>
+    <div class="result">
+      <div class="card">
+        <h4>📖 Getting Started</h4>
+        <p>Agri Gram AI helps you manage your farm with AI-powered insights. Upload soil photos, check weather, get crop recommendations, and monitor IoT sensors all in one place.</p>
+      </div>
+      <div class="card">
+        <h4>🔧 Features Guide</h4>
+        <table>
+          <tr><td>📸 Soil→Crop</td><td>Upload soil photo to get crop recommendations</td></tr>
+          <tr><td>🌦️ Weather</td><td>5-day weather forecast for your area</td></tr>
+          <tr><td>💧 Water</td><td>Irrigation scheduling and water management</td></tr>
+          <tr><td>🐛 Disease</td><td>AI-powered plant disease detection</td></tr>
+          <tr><td>🗣️ Chat</td><td>Tamil & English AI farming chatbot</td></tr>
+          <tr><td>🌡️ IoT</td><td>Real-time sensor monitoring from ESP32</td></tr>
+          <tr><td>🛰️ Climate Risk</td><td>AI climate risk assessment score</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h4>📞 Contact Support</h4>
+        <p><strong>Email:</strong> support@agrigramai.com</p>
+        <p><strong>Phone:</strong> +91 98765 43210</p>
+        <p><strong>Hours:</strong> Mon-Sat, 9:00 AM - 6:00 PM IST</p>
+      </div>
+      <div class="card">
+        <h4>❓ FAQ</h4>
+        <p><strong>Q: Is my data secure?</strong><br>A: Yes, all data is stored securely in Supabase with encryption.</p>
+        <p style="margin-top:8px;"><strong>Q: Can I use this offline?</strong><br>A: Basic features work offline with local SQLite backup. AI features need internet.</p>
+        <p style="margin-top:8px;"><strong>Q: How accurate is the AI?</strong><br>A: Our AI models have 85-95% accuracy based on regional agricultural data.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+
+// Auto-detect backend: use the same site when hosted online, localhost when opened locally
+const API = (location.protocol === "file:" || location.hostname === "")
+  ? "http://localhost:5000/api"
+  : location.origin + "/api";
+const CROPS = ["Rice","Wheat","Cotton","Sugarcane","Groundnut","Maize","Millets","Pulses","Vegetables","Coconut"];
+
+window.onload = () => {
+  initProfile(); updateThemeLabel();
+  ["waterCrop","calCrop","profitCrop","fertCrop","rotCrop","yieldCrop","rCrop","smsCrop","climCrop"].forEach(id => {
+    const sel = document.getElementById(id);
+    CROPS.forEach(c => sel.innerHTML += `<option value="${c}">${c}</option>`);
+  });
+};
+
+function show(id, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(t => t.classList.remove('active'));
+  const panel = document.getElementById(id);
+  if (panel) panel.classList.add('active');
+  if (el) el.classList.add('active');
+  // Close sidebar on mobile
+  if (window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.remove('open');
+  }
+}
+function preview(inputId, imgId) {
+  const file = document.getElementById(inputId).files[0];
+  if (file) { const img=document.getElementById(imgId); img.src=URL.createObjectURL(file); img.style.display='block'; }
+}
+function offlineMsg(el){ document.getElementById(el).innerHTML="<div class='result'>⚠️ Backend not running. Start <b>python app.py</b> first!</div>"; }
+const rupee = n => "₹" + Number(n).toLocaleString('en-IN');
+
+// 1. SOIL
+async function analyzeSoil() {
+  const file=document.getElementById('soilImg').files[0];
+  if(!file) return alert("Upload a soil photo first!");
+  const fd=new FormData(); fd.append('image',file); fd.append('season',document.getElementById('soilSeason').value);
+  try {
+    const d=await(await fetch(`${API}/soil`,{method:'POST',body:fd})).json();
+    let h=`<div class='result'><div class='card'><h4>Detected Soil: ${d.soil.name}</h4><p>Ideal pH: ${d.soil.ph}</p></div><h4 style='color:#ffe082;margin:12px 0'>Recommended Crops:</h4>`;
+    d.recommended_crops.forEach(c=>{h+=`<div class='card'><h4>🌱 ${c.crop}</h4><p>💧 ${c.water_mm}mm | ⏱️ ${c.duration_days} days</p><p>📋 ${c.method}</p></div>`;});
+    document.getElementById('soilResult').innerHTML=h+`</div>`;
+  } catch(e){ offlineMsg('soilResult'); }
+}
+// 2. WEATHER
+async function getWeather() {
+  try {
+    const d=await(await fetch(`${API}/weather?city=${document.getElementById('city').value}`)).json();
+    let h=`<div class='result'><table><tr><th>Date</th><th>Max°C</th><th>Min°C</th><th>Rain</th><th>Advice</th></tr>`;
+    d.forecast.forEach(f=>{h+=`<tr><td>${f.date}</td><td>${f.max_temp}</td><td>${f.min_temp}</td><td>${f.rainfall_mm}</td><td>${f.advice}</td></tr>`;});
+    document.getElementById('weatherResult').innerHTML=h+`</table><p class='hint'>Source: ${d.source}</p></div>`;
+  } catch(e){ offlineMsg('weatherResult'); }
+}
+// 3. WATER
+async function calcWater() {
+  try {
+    const c=waterCrop.value,a=area.value,t=temp.value,r=rain.value;
+    const d=await(await fetch(`${API}/water?crop=${c}&area=${a}&temp=${t}&rain=${r}`)).json();
+    document.getElementById('waterResult').innerHTML=`<div class='result'><div class='card'><h4>💧 ${d.crop}</h4><p>Total: <b>${d.total_water_liters.toLocaleString()} L</b></p><p>Per day: <b>${d.per_day_liters.toLocaleString()} L</b> over ${d.duration_days} days</p><p class='hint'>${d.note}</p></div></div>`;
+  } catch(e){ offlineMsg('waterResult'); }
+}
+// 4. CALENDAR
+async function getCalendar() {
+  try {
+    const d=await(await fetch(`${API}/calendar?crop=${calCrop.value}`)).json();
+    let h=`<div class='result'><h4 style='color:#ffe082'>${d.crop} — ${d.total_days} days (${d.season.months})</h4><table><tr><th>Day</th><th>Stage</th><th>Task</th></tr>`;
+    d.timeline.forEach(s=>{h+=`<tr><td>Day ${s.day}</td><td>${s.stage}</td><td>${s.task}</td></tr>`;});
+    document.getElementById('calResult').innerHTML=h+`</table></div>`;
+  } catch(e){ offlineMsg('calResult'); }
+}
+// 5. DISEASE
+async function detectDisease() {
+  const file=document.getElementById('leafImg').files[0];
+  if(!file) return alert("Upload a leaf photo first!");
+  const fd=new FormData(); fd.append('image',file);
+  try {
+    const d=await(await fetch(`${API}/disease`,{method:'POST',body:fd})).json();
+    document.getElementById('diseaseResult').innerHTML=`<div class='result'><div class='card'><h4>🔬 ${d.name}</h4><p>Severity: <b>${d.severity}</b></p><p>💊 Treatment: ${d.treatment}</p></div></div>`;
+  } catch(e){ offlineMsg('diseaseResult'); }
+}
+// 6. CHAT
+async function sendChat() {
+  const input=document.getElementById('chatInput'), msg=input.value.trim();
+  if(!msg) return;
+  const box=document.getElementById('chatBox');
+  box.innerHTML+=`<div class='msg user'>${msg}</div>`; input.value='';
+  try {
+    const d=await(await fetch(`${API}/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})})).json();
+    box.innerHTML+=`<div class='msg bot'>${d.reply}</div>`;
+  } catch(e){ box.innerHTML+=`<div class='msg bot'>⚠️ Backend not running.</div>`; }
+  box.scrollTop=box.scrollHeight;
+}
+// 6b. VOICE (browser speech recognition)
+function startVoice() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ alert("Voice not supported in this browser. Use Chrome/Edge."); return; }
+  const rec=new SR(); rec.lang='ta-IN'; rec.interimResults=false;
+  const btn=document.getElementById('micBtn');
+  btn.classList.add('listening'); btn.textContent='🎙️ Listening...';
+  rec.start();
+  rec.onresult=(e)=>{ document.getElementById('chatInput').value=e.results[0][0].transcript; sendChat(); };
+  rec.onerror=()=>{ alert("Voice error. Try again."); };
+  rec.onend=()=>{ btn.classList.remove('listening'); btn.textContent='🎤 Voice (Tamil/English)'; };
+}
+// 7. PROFIT
+async function calcProfit() {
+  try {
+    const c=profitCrop.value,a=profitArea.value,p=profitPrice.value;
+    let url=`${API}/profit?crop=${c}&area=${a}`; if(p) url+=`&price=${p}`;
+    const d=await(await fetch(url)).json();
+    document.getElementById('profitResult').innerHTML=`<div class='result'><div class='card'><h4>💰 ${d.crop} (${d.area_acres} acre)</h4>
+      <p>Yield: <b>${d.yield_kg.toLocaleString()} kg</b> @ ${rupee(d.market_price_per_kg)}/kg</p>
+      <p>Total cost: ${rupee(d.total_cost)}</p>
+      <p>Revenue: ${rupee(d.total_revenue)}</p>
+      <p class='big'>Profit: ${rupee(d.profit)}</p>
+      <p>ROI: <b>${d.roi_percent}%</b> — ${d.verdict}</p></div></div>`;
+  } catch(e){ offlineMsg('profitResult'); }
+}
+// 8. FERTILIZER
+async function getFertilizer() {
+  try {
+    const d=await(await fetch(`${API}/fertilizer?crop=${fertCrop.value}`)).json();
+    let h=`<div class='result'><div class='card'><h4>🌱 ${d.crop}</h4>
+      <p><b>Fertilizer:</b> ${d.fertilizer}</p><p><b>NPK:</b> ${d.npk_ratio}</p>
+      <p><b>Pesticide:</b> ${d.pesticide}</p></div><h4 style='color:#ffe082;margin:12px 0'>Schedule:</h4>`;
+    d.schedule.forEach(s=>{h+=`<div class='card'><h4>${s.stage}</h4><p>${s.action}</p></div>`;});
+    document.getElementById('fertResult').innerHTML=h+`<p class='hint'>${d.tip}</p></div>`;
+  } catch(e){ offlineMsg('fertResult'); }
+}
+// 9. ROTATION
+async function getRotation() {
+  try {
+    const d=await(await fetch(`${API}/rotation?crop=${rotCrop.value}`)).json();
+    document.getElementById('rotResult').innerHTML=`<div class='result'><div class='card'><h4>🔄 After ${d.current_crop}, plant:</h4>
+      <p class='big'>${d.next_crop_options.join(", ")}</p></div>
+      <div class='card'><p>💡 ${d.reason}</p><p>${d.benefit}</p><p>⚠️ ${d.avoid}</p></div></div>`;
+  } catch(e){ offlineMsg('rotResult'); }
+}
+// 10. YIELD
+async function predictYield() {
+  try {
+    const c=yieldCrop.value,a=yieldArea.value,r=yieldRain.value,s=yieldSoil.value;
+    const d=await(await fetch(`${API}/yield?crop=${c}&area=${a}&rain=${r}&soil=${s}`)).json();
+    document.getElementById('yieldResult').innerHTML=`<div class='result'><div class='card'><h4>📊 ${d.crop} (${d.area_acres} acre)</h4>
+      <p class='big'>${d.predicted_yield_kg.toLocaleString()} kg (${d.predicted_yield_tons} tons)</p>
+      <p>Rainfall: ${d.rainfall_mm}mm | Soil: ${d.soil_quality}</p>
+      <p>Confidence: ${d.confidence}</p><p class='hint'>${d.note}</p></div></div>`;
+  } catch(e){ offlineMsg('yieldResult'); }
+}
+// 11. ALERTS
+async function getAlerts() {
+  try {
+    const t=alertTemp.value,r=alertRain.value,h=alertHum.value;
+    const d=await(await fetch(`${API}/alerts?temp=${t}&rain=${r}&humidity=${h}`)).json();
+    let html=`<div class='result'><h4 style='color:#ffe082'>${d.summary}</h4>`;
+    d.alerts.forEach(a=>{html+=`<div class='card'><h4>${a.level}</h4><p>${a.msg}</p></div>`;});
+    document.getElementById('alertResult').innerHTML=html+`</div>`;
+  } catch(e){ offlineMsg('alertResult'); }
+}
+// 12. SCHEMES
+async function getSchemes() {
+  try {
+    const d=await(await fetch(`${API}/schemes?q=${document.getElementById('schemeQuery').value}`)).json();
+    let h=`<div class='result'>`;
+    d.schemes.forEach(s=>{h+=`<div class='card'><h4>${s.name}</h4><p>💵 ${s.benefit}</p><p>✅ Eligible: ${s.eligibility}</p><p>📝 How: ${s.how}</p></div>`;});
+    document.getElementById('schemeResult').innerHTML=h+`</div>`;
+  } catch(e){ offlineMsg('schemeResult'); }
+}
+// 13. ANALYTICS
+let chartObj=null;
+async function loadAnalytics() {
+  try {
+    const d=await(await fetch(`${API}/analytics`)).json();
+    const labels=d.profit_comparison.map(x=>x.crop);
+    const values=d.profit_comparison.map(x=>x.profit_per_acre);
+    if(chartObj) chartObj.destroy();
+    chartObj=new Chart(document.getElementById('profitChart'),{
+      type:'bar',
+      data:{labels,datasets:[{label:'Profit per acre (₹)',data:values,backgroundColor:'#ffca28'}]},
+      options:{plugins:{legend:{labels:{color:'#fff'}}},scales:{x:{ticks:{color:'#fff'}},y:{ticks:{color:'#fff'}}}}
+    });
+    document.getElementById('analyticsNote').innerHTML=`<div class='result'><p>🏆 Most profitable: <b>${d.best_crop}</b></p><p class='hint'>${d.note}</p></div>`;
+  } catch(e){ offlineMsg('analyticsNote'); }
+}
+
+// Water comparison chart
+let waterChartObj=null;
+async function loadWaterChart() {
+  try {
+    const d=await(await fetch(`${API}/analytics_summary`)).json();
+    const labels=d.water_comparison.map(x=>x.crop);
+    const values=d.water_comparison.map(x=>x.water_mm);
+    if(waterChartObj) waterChartObj.destroy();
+    waterChartObj=new Chart(document.getElementById('waterChart'),{
+      type:'bar',
+      data:{labels,datasets:[{label:'Water need (mm)',data:values,backgroundColor:'#4fc3f7'}]},
+      options:{plugins:{legend:{labels:{color:'#fff'}}},scales:{x:{ticks:{color:'#fff'}},y:{ticks:{color:'#fff'}}}}
+    });
+  } catch(e){ alert("Backend not running. Start the server first!"); }
+}
+
+// PDF report download
+async function downloadReport() {
+  const payload = {
+    farmer_name: document.getElementById('rFarmer').value || "-",
+    location: document.getElementById('rLocation').value || "-",
+    crop: document.getElementById('rCrop').value,
+    soil: document.getElementById('rSoil').value || "-",
+    notes: document.getElementById('rNotes').value || "",
+    water: "See Water Calc tab for details",
+    weather_summary: "Check Weather tab for 7-day forecast",
+    yield_kg: "See Yield tab",
+    profit: "See Profit tab"
+  };
+  try {
+    const res = await fetch(`${API}/report`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    if(!res.ok) throw new Error("fail");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = "agri_gram_report.pdf"; a.click();
+    URL.revokeObjectURL(url);
+    document.getElementById('reportResult').innerHTML =
+      "<div class='result'>✅ PDF downloaded! Check your Downloads folder.</div>";
+  } catch(e){ offlineMsg('reportResult'); }
+}
+
+// WhatsApp alert - free, no setup. Opens WhatsApp with the message ready.
+function sendWhatsApp() {
+  let phone = document.getElementById('smsPhone').value.trim();
+  if(!phone) return alert("Enter the farmer's WhatsApp number (10 digit)");
+  // keep digits only; add India country code 91 if a bare 10-digit number
+  phone = phone.replace(/\D/g, "");
+  if(phone.length === 10) phone = "91" + phone;
+  const crop = document.getElementById('smsCrop').value;
+  const advice = document.getElementById('smsAdvice').value;
+  const msg = `🌾 Agri Gram AI Alert: For your ${crop} crop - ${advice} Stay safe & farm smart!`;
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+  window.open(url, "_blank");
+  document.getElementById('smsResult').innerHTML =
+    `<div class='result'>✅ WhatsApp opened for +${phone}. Just press <b>Send</b> in WhatsApp!
+     <p class='hint'>Message: "${msg}"</p></div>`;
+}
+
+// Climate Risk Score (research feature)
+async function getClimateRisk() {
+  const city=document.getElementById('climCity').value;
+  const crop=document.getElementById('climCrop').value;
+  const lat=document.getElementById('climLat').value;
+  const lon=document.getElementById('climLon').value;
+  document.getElementById('climResult').innerHTML="<div class='result'>⏳ Analyzing 7-day forecast...</div>";
+  try {
+    const d=await(await fetch(`${API}/climate_risk?crop=${crop}&city=${encodeURIComponent(city)}&lat=${lat}&lon=${lon}`)).json();
+    // color for overall
+    const col = d.overall_risk>=70?'#ff5252':d.overall_risk>=40?'#ffa726':d.overall_risk>=20?'#ffee58':'#69f0ae';
+    let html=`<div class='result'>
+      <div class='card' style='border-left-color:${col}'>
+        <h4>${d.overall_label} — Overall Risk: <span style='color:${col}'>${d.overall_risk}/100</span></h4>
+        <p>Crop: <b>${d.crop}</b> | City: ${d.city} | Top hazard: <b>${d.top_hazard}</b></p>
+      </div>
+      <h4 style='color:#ffe082;margin:12px 0'>Hazard Breakdown:</h4>
+      <table><tr><th>Hazard</th><th>Score</th><th>Status</th><th>Crop Sensitivity</th><th>Contribution</th></tr>`;
+    d.breakdown.forEach(b=>{
+      html+=`<tr><td>${b.hazard}</td><td>${b.score}/100</td><td>${b.label}</td><td>${b.crop_sensitivity}</td><td>${b.contribution}</td></tr>`;
+    });
+    html+=`</table>
+      <div class='card' style='margin-top:12px'><h4>💡 Advice</h4><p>${d.advice}</p></div>
+      <div class='card'><h4>🌦️ Weather (7-day)</h4>
+        <p>Total rain: ${d.weather_stats.total_rain_mm}mm | Max day rain: ${d.weather_stats.max_day_rain_mm}mm</p>
+        <p>Avg max temp: ${d.weather_stats.avg_max_temp}°C | Min temp: ${d.weather_stats.min_temp}°C</p></div>
+      <p class='hint'>🧠 ${d.explanation}</p>
+      <p class='hint'>Source: ${d.source}</p></div>`;
+    document.getElementById('climResult').innerHTML=html;
+  } catch(e){ offlineMsg('climResult'); }
+}
+
+// IoT Live
+let iotChartObj=null;
+async function iotSimulate() {
+  try {
+    await fetch(`${API}/iot/simulate`,{method:'POST'});
+    iotRefresh();
+  } catch(e){ alert("Backend not running!"); }
+}
+async function iotRefresh() {
+  try {
+    const d=await(await fetch(`${API}/iot/history?n=20`)).json();
+    // Latest card
+    const l=d.latest;
+    if(l.message){ document.getElementById('iotLatest').innerHTML=`<div class='result'>${l.message}</div>`; return; }
+    let alertHtml='';
+    if(l.alerts&&l.alerts.length){
+      alertHtml=l.alerts.map(a=>`<div class='card' style='border-left-color:#ff5252'><p>${a}</p></div>`).join('');
+    }
+    document.getElementById('iotLatest').innerHTML=`<div class='result'>
+      <div class='card'><h4>Latest Reading (${l.timestamp})</h4>
+      <p>🌡️ Temp: <b>${l.temperature}°C</b> | 💧 Humidity: <b>${l.humidity}%</b> | 🌱 Soil Moisture: <b>${l.soil_moisture}%</b></p>
+      <p>Device: ${l.device} | Irrigation: ${l.irrigation_needed?'<b style="color:#ff5252">NEEDED</b>':'<b style="color:#69f0ae">OK</b>'}</p>
+      </div></div>`;
+    document.getElementById('iotAlerts').innerHTML=alertHtml;
+    // Chart
+    if(d.readings.length>1){
+      const labels=d.readings.map(r=>r.timestamp.split(' ')[1]);
+      const temps=d.readings.map(r=>r.temperature);
+      const moist=d.readings.map(r=>r.soil_moisture);
+      if(iotChartObj) iotChartObj.destroy();
+      iotChartObj=new Chart(document.getElementById('iotChart'),{
+        type:'line',
+        data:{labels, datasets:[
+          {label:'Temperature °C',data:temps,borderColor:'#ff7043',tension:0.3,fill:false},
+          {label:'Soil Moisture %',data:moist,borderColor:'#42a5f5',tension:0.3,fill:false}
+        ]},
+        options:{plugins:{legend:{labels:{color:'#fff'}}},
+          scales:{x:{ticks:{color:'#fff',maxTicksLimit:8}},y:{ticks:{color:'#fff'}}}}
+      });
+    }
+  } catch(e){ offlineMsg('iotLatest'); }
+}
+
+// ========= DARK/LIGHT MODE =========
+
+// ========= GPS LOCATION AUTO-DETECT =========
+let userLat = null, userLon = null, userCity = null;
+
+function detectLocation() {
+  if (!navigator.geolocation) {
+    alert('GPS not supported in this browser!');
+    return;
+  }
+  document.getElementById('city').value = '📍 Detecting...';
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      userLat = pos.coords.latitude.toFixed(4);
+      userLon = pos.coords.longitude.toFixed(4);
+      // Reverse geocode to get city name
+      try {
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLat}&longitude=${userLon}&current_weather=true`);
+        const data = await res.json();
+        // Use nominatim for city name
+        const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${userLat}&lon=${userLon}&format=json`);
+        const geoData = await geoRes.json();
+        userCity = geoData.address?.city || geoData.address?.town || geoData.address?.village || geoData.address?.county || 'My Location';
+        document.getElementById('city').value = userCity + ' 📍';
+      } catch(e) {
+        document.getElementById('city').value = `Lat:${userLat}, Lon:${userLon} 📍`;
+      }
+    },
+    (err) => {
+      document.getElementById('city').value = 'Coimbatore';
+      alert('Location access denied. Please allow location permission.');
+    }
+  );
+}
+
+function detectLocationClimate() {
+  if (!navigator.geolocation) { alert('GPS not supported!'); return; }
+  document.getElementById('climCity').value = '📍 Detecting...';
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const lat = pos.coords.latitude.toFixed(4);
+      const lon = pos.coords.longitude.toFixed(4);
+      document.getElementById('climLat').value = lat;
+      document.getElementById('climLon').value = lon;
+      try {
+        const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
+        const geoData = await geoRes.json();
+        const city = geoData.address?.city || geoData.address?.town || geoData.address?.village || 'My Location';
+        document.getElementById('climCity').value = city + ' 📍';
+      } catch(e) { document.getElementById('climCity').value = `${lat}, ${lon} 📍`; }
+    },
+    () => { document.getElementById('climCity').value = 'Coimbatore'; alert('Location denied!'); }
+  );
+}
+
+function toggleTheme() {
+  document.body.classList.toggle('dark-mode');
+  const isDark = document.body.classList.contains('dark-mode');
+  localStorage.setItem('agri_theme', isDark ? 'dark' : 'light');
+  updateThemeLabel();
+}
+// Load saved theme on page start
+if (localStorage.getItem('agri_theme') === 'dark') { 
+  document.body.classList.add('dark-mode'); 
+}
+
+// ========= LANGUAGE TRANSLATION =========
+
+// ===== CONTENT TRANSLATIONS =====
+const contentTranslations = {
+  en: {
+    headings: {
+      dashboard: '🏠 Welcome to Agri Gram AI',
+      soil: '📸 Soil Photo → Crop Recommendation',
+      weather: '🌦️ Weather & Forecast',
+      water: '💧 Water & Irrigation Management',
+      calendar: '📅 Crop Calendar / Timeline',
+      disease: '🐛 Plant Disease Detection',
+      chat: '🗣️ AI Farming Chatbot',
+      profit: '💰 Profit & Cost Estimator',
+      fertilizer: '🌱 Fertilizer Advisor',
+      rotation: '🔄 Crop Rotation Planner',
+      yield: '📊 Yield Prediction',
+      alerts: '🔔 Smart Alerts & Notifications',
+      schemes: '📱 Government Schemes',
+      analytics: '📈 Farm Analytics & History',
+      report: '📄 PDF Report Generator',
+      sms: '💬 WhatsApp / SMS Alert',
+      climate: '🛰️ Climate Risk Assessment',
+      iot: '🌡️ IoT Live Sensor Data'
+    },
+    buttons: {
+      analyze: 'Analyze',
+      submit: 'Submit',
+      generate: 'Generate',
+      predict: 'Predict',
+      check: 'Check',
+      send: 'Send',
+      refresh: 'Refresh',
+      download: 'Download',
+      simulate: 'Simulate Sensor Reading',
+      showTimeline: 'Show Timeline',
+      suggestCrop: 'Suggest Next Crop',
+      getWeather: 'Get Weather',
+      getSchedule: 'Get Irrigation Schedule',
+      detectDisease: 'Detect Disease',
+      askAI: 'Ask AI',
+      calculate: 'Calculate Profit',
+      getFertilizer: 'Get Fertilizer Plan',
+      predictYield: 'Predict Yield',
+      getAlerts: 'Get Smart Alerts',
+      getSchemes: 'Find Schemes',
+      getAnalytics: 'Load Analytics',
+      generateReport: 'Generate Full Report',
+      sendAlert: 'Send Alert',
+      assessRisk: 'Assess Climate Risk'
+    },
+    labels: {
+      crop: 'Crop',
+      location: 'Location',
+      area: 'Area (acres)',
+      season: 'Season',
+      phone: 'Phone Number',
+      message: 'Message'
+    }
+  },
+  ta: {
+    headings: {
+      dashboard: '🏠 அக்ரி கிராம் AI க்கு வரவேற்கிறோம்',
+      soil: '📸 மண் புகைப்படம் → பயிர் பரிந்துரை',
+      weather: '🌦️ வானிலை & முன்னறிவிப்பு',
+      water: '💧 நீர் & பாசன மேலாண்மை',
+      calendar: '📅 பயிர் நாட்காட்டி / காலக்கெடு',
+      disease: '🐛 தாவர நோய் கண்டறிதல்',
+      chat: '🗣️ AI விவசாய சாட்போட்',
+      profit: '💰 லாபம் & செலவு மதிப்பீடு',
+      fertilizer: '🌱 உர ஆலோசகர்',
+      rotation: '🔄 பயிர் சுழற்சி திட்டமிடல்',
+      yield: '📊 மகசூல் கணிப்பு',
+      alerts: '🔔 ஸ்மார்ட் எச்சரிக்கைகள்',
+      schemes: '📱 அரசு திட்டங்கள்',
+      analytics: '📈 பண்ணை பகுப்பாய்வு',
+      report: '📄 PDF அறிக்கை உருவாக்கி',
+      sms: '💬 WhatsApp / SMS எச்சரிக்கை',
+      climate: '🛰️ காலநிலை ஆபத்து மதிப்பீடு',
+      iot: '🌡️ IoT நேரடி சென்சார் தரவு'
+    },
+    buttons: {
+      analyze: 'பகுப்பாய்வு',
+      submit: 'சமர்ப்பி',
+      generate: 'உருவாக்கு',
+      predict: 'கணிக்க',
+      check: 'சரிபார்',
+      send: 'அனுப்பு',
+      refresh: 'புதுப்பி',
+      download: 'பதிவிறக்கு',
+      simulate: '⚡ சென்சார் உருவகப்படுத்து',
+      showTimeline: '📅 காலக்கெடு காட்டு',
+      suggestCrop: '🔄 அடுத்த பயிர் பரிந்துரை',
+      getWeather: '🌦️ வானிலை பெறு',
+      getSchedule: '💧 பாசன அட்டவணை',
+      detectDisease: '🔬 நோய் கண்டறி',
+      askAI: '🤖 AI கேள்',
+      calculate: '💰 லாபம் கணக்கிடு',
+      getFertilizer: '🌱 உர திட்டம்',
+      predictYield: '📊 மகசூல் கணிப்பு',
+      getAlerts: '🔔 எச்சரிக்கைகள்',
+      getSchemes: '📱 திட்டங்கள் கண்டறி',
+      getAnalytics: '📈 பகுப்பாய்வு ஏற்று',
+      generateReport: '📄 அறிக்கை உருவாக்கு',
+      sendAlert: '📤 எச்சரிக்கை அனுப்பு',
+      assessRisk: '🛰️ ஆபத்து மதிப்பீடு'
+    },
+    labels: {
+      crop: 'பயிர்',
+      location: 'இடம்',
+      area: 'பரப்பளவு (ஏக்கர்)',
+      season: 'பருவம்',
+      phone: 'தொலைபேசி எண்',
+      message: 'செய்தி'
+    }
+  },
+  hi: {
+    headings: {
+      dashboard: '🏠 एग्री ग्राम AI में आपका स्वागत है',
+      soil: '📸 मिट्टी फोटो → फसल सुझाव',
+      weather: '🌦️ मौसम & पूर्वानुमान',
+      water: '💧 पानी & सिंचाई प्रबंधन',
+      calendar: '📅 फसल कैलेंडर / समयरेखा',
+      disease: '🐛 पौधा रोग पहचान',
+      chat: '🗣️ AI खेती चैटबॉट',
+      profit: '💰 लाभ & लागत अनुमान',
+      fertilizer: '🌱 उर्वरक सलाहकार',
+      rotation: '🔄 फसल चक्रण योजना',
+      yield: '📊 उपज भविष्यवाणी',
+      alerts: '🔔 स्मार्ट अलर्ट',
+      schemes: '📱 सरकारी योजनाएं',
+      analytics: '📈 खेत विश्लेषण',
+      report: '📄 PDF रिपोर्ट जनरेटर',
+      sms: '💬 WhatsApp / SMS अलर्ट',
+      climate: '🛰️ जलवायु जोखिम आकलन',
+      iot: '🌡️ IoT लाइव सेंसर डेटा'
+    },
+    buttons: {
+      analyze: 'विश्लेषण',
+      submit: 'जमा करें',
+      generate: 'बनाएं',
+      predict: 'भविष्यवाणी',
+      check: 'जाँचें',
+      send: 'भेजें',
+      refresh: 'रिफ्रेश',
+      download: 'डाउनलोड',
+      simulate: '⚡ सेंसर सिमुलेट',
+      showTimeline: '📅 समयरेखा दिखाएं',
+      suggestCrop: '🔄 अगली फसल सुझाव',
+      getWeather: '🌦️ मौसम देखें',
+      getSchedule: '💧 सिंचाई अनुसूची',
+      detectDisease: '🔬 रोग पहचानें',
+      askAI: '🤖 AI से पूछें',
+      calculate: '💰 लाभ गणना',
+      getFertilizer: '🌱 उर्वरक योजना',
+      predictYield: '📊 उपज भविष्यवाणी',
+      getAlerts: '🔔 अलर्ट प्राप्त करें',
+      getSchemes: '📱 योजनाएं खोजें',
+      getAnalytics: '📈 विश्लेषण लोड',
+      generateReport: '📄 रिपोर्ट बनाएं',
+      sendAlert: '📤 अलर्ट भेजें',
+      assessRisk: '🛰️ जोखिम आकलन'
+    },
+    labels: {
+      crop: 'फसल',
+      location: 'स्थान',
+      area: 'क्षेत्र (एकड़)',
+      season: 'मौसम',
+      phone: 'फ़ोन नंबर',
+      message: 'संदेश'
+    }
+  },
+  te: {
+    headings: {
+      dashboard: '🏠 అగ్రి గ్రామ్ AI కి స్వాగతం',
+      soil: '📸 నేల ఫోటో → పంట సిఫార్సు',
+      weather: '🌦️ వాతావరణం & అంచనా',
+      water: '💧 నీరు & నీటిపారుదల నిర్వహణ',
+      calendar: '📅 పంట క్యాలెండర్ / టైమ్‌లైన్',
+      disease: '🐛 మొక్క వ్యాధి గుర్తింపు',
+      chat: '🗣️ AI వ్యవసాయ చాట్‌బాట్',
+      profit: '💰 లాభం & ఖర్చు అంచనా',
+      fertilizer: '🌱 ఎరువు సలహాదారు',
+      rotation: '🔄 పంట భ్రమణ ప్రణాళిక',
+      yield: '📊 దిగుబడి అంచనా',
+      alerts: '🔔 స్మార్ట్ అలర్ట్‌లు',
+      schemes: '📱 ప్రభుత్వ పథకాలు',
+      analytics: '📈 వ్యవసాయ విశ్లేషణ',
+      report: '📄 PDF రిపోర్ట్ జనరేటర్',
+      sms: '💬 WhatsApp / SMS అలర్ట్',
+      climate: '🛰️ వాతావరణ ప్రమాద అంచనా',
+      iot: '🌡️ IoT లైవ్ సెన్సార్ డేటా'
+    },
+    buttons: {
+      analyze: 'విశ్లేషించు',
+      submit: 'సమర్పించు',
+      generate: 'సృష్టించు',
+      predict: 'అంచనా వేయి',
+      check: 'తనిఖీ',
+      send: 'పంపు',
+      refresh: 'రిఫ్రెష్',
+      download: 'డౌన్‌లోడ్',
+      simulate: '⚡ సెన్సార్ అనుకరణ',
+      showTimeline: '📅 టైమ్‌లైన్ చూపు',
+      suggestCrop: '🔄 తదుపరి పంట సూచన',
+      getWeather: '🌦️ వాతావరణం చూడు',
+      getSchedule: '💧 నీటిపారుదల షెడ్యూల్',
+      detectDisease: '🔬 వ్యాధి గుర్తించు',
+      askAI: '🤖 AI అడగు',
+      calculate: '💰 లాభం లెక్కించు',
+      getFertilizer: '🌱 ఎరువు ప్రణాళిక',
+      predictYield: '📊 దిగుబడి అంచనా',
+      getAlerts: '🔔 అలర్ట్‌లు పొందు',
+      getSchemes: '📱 పథకాలు కనుగొను',
+      getAnalytics: '📈 విశ్లేషణ లోడ్',
+      generateReport: '📄 రిపోర్ట్ సృష్టించు',
+      sendAlert: '📤 అలర్ట్ పంపు',
+      assessRisk: '🛰️ ప్రమాద అంచనా'
+    },
+    labels: {
+      crop: 'పంట',
+      location: 'ప్రదేశం',
+      area: 'విస్తీర్ణం (ఎకరాలు)',
+      season: 'సీజన్',
+      phone: 'ఫోన్ నంబర్',
+      message: 'సందేశం'
+    }
+  },
+  kn: {
+    headings: {
+      dashboard: '🏠 ಅಗ್ರಿ ಗ್ರಾಮ್ AI ಗೆ ಸ್ವಾಗತ',
+      soil: '📸 ಮಣ್ಣು ಫೋಟೋ → ಬೆಳೆ ಶಿಫಾರಸು',
+      weather: '🌦️ ಹವಾಮಾನ & ಮುನ್ಸೂಚನೆ',
+      water: '💧 ನೀರು & ನೀರಾವರಿ ನಿರ್ವಹಣೆ',
+      calendar: '📅 ಬೆಳೆ ಕ್ಯಾಲೆಂಡರ್',
+      disease: '🐛 ಸಸ್ಯ ರೋಗ ಪತ್ತೆ',
+      chat: '🗣️ AI ಕೃಷಿ ಚಾಟ್‌ಬಾಟ್',
+      profit: '💰 ಲಾಭ & ವೆಚ್ಚ ಅಂದಾಜು',
+      fertilizer: '🌱 ಗೊಬ್ಬರ ಸಲಹೆಗಾರ',
+      rotation: '🔄 ಬೆಳೆ ತಿರುಗುವಿಕೆ ಯೋಜನೆ',
+      yield: '📊 ಇಳುವರಿ ಊಹೆ',
+      alerts: '🔔 ಸ್ಮಾರ್ಟ್ ಎಚ್ಚರಿಕೆಗಳು',
+      schemes: '📱 ಸರ್ಕಾರಿ ಯೋಜನೆಗಳು',
+      analytics: '📈 ಕೃಷಿ ವಿಶ್ಲೇಷಣೆ',
+      report: '📄 PDF ವರದಿ ಜನರೇಟರ್',
+      sms: '💬 WhatsApp / SMS ಎಚ್ಚರಿಕೆ',
+      climate: '🛰️ ಹವಾಮಾನ ಅಪಾಯ ಮೌಲ್ಯಮಾಪನ',
+      iot: '🌡️ IoT ಲೈವ್ ಸೆನ್ಸಾರ್ ಡೇಟಾ'
+    },
+    buttons: {
+      analyze: 'ವಿಶ್ಲೇಷಿಸಿ',
+      submit: 'ಸಲ್ಲಿಸಿ',
+      generate: 'ರಚಿಸಿ',
+      predict: 'ಊಹಿಸಿ',
+      check: 'ಪರಿಶೀಲಿಸಿ',
+      send: 'ಕಳುಹಿಸಿ',
+      refresh: 'ರಿಫ್ರೆಶ್',
+      download: 'ಡೌನ್‌ಲೋಡ್',
+      simulate: '⚡ ಸೆನ್ಸಾರ್ ಅನುಕರಣೆ',
+      showTimeline: '📅 ಟೈಮ್‌ಲೈನ್ ತೋರಿಸಿ',
+      suggestCrop: '🔄 ಮುಂದಿನ ಬೆಳೆ ಸಲಹೆ',
+      getWeather: '🌦️ ಹವಾಮಾನ ನೋಡಿ',
+      getSchedule: '💧 ನೀರಾವರಿ ವೇಳಾಪಟ್ಟಿ',
+      detectDisease: '🔬 ರೋಗ ಪತ್ತೆ',
+      askAI: '🤖 AI ಕೇಳಿ',
+      calculate: '💰 ಲಾಭ ಲೆಕ್ಕ',
+      getFertilizer: '🌱 ಗೊಬ್ಬರ ಯೋಜನೆ',
+      predictYield: '📊 ಇಳುವರಿ ಊಹೆ',
+      getAlerts: '🔔 ಎಚ್ಚರಿಕೆಗಳು',
+      getSchemes: '📱 ಯೋಜನೆ ಹುಡುಕಿ',
+      getAnalytics: '📈 ವಿಶ್ಲೇಷಣೆ ಲೋಡ್',
+      generateReport: '📄 ವರದಿ ರಚಿಸಿ',
+      sendAlert: '📤 ಎಚ್ಚರಿಕೆ ಕಳುಹಿಸಿ',
+      assessRisk: '🛰️ ಅಪಾಯ ಮೌಲ್ಯಮಾಪನ'
+    },
+    labels: {
+      crop: 'ಬೆಳೆ',
+      location: 'ಸ್ಥಳ',
+      area: 'ವಿಸ್ತೀರ್ಣ (ಎಕರೆ)',
+      season: 'ಋತು',
+      phone: 'ಫೋನ್ ನಂಬರ್',
+      message: 'ಸಂದೇಶ'
+    }
+  },
+  ml: {
+    headings: {
+      dashboard: '🏠 അഗ്രി ഗ്രാം AI ലേക്ക് സ്വാഗതം',
+      soil: '📸 മണ്ണ് ഫോട്ടോ → വിള ശുപാർശ',
+      weather: '🌦️ കാലാവസ്ഥ & പ്രവചനം',
+      water: '💧 ജലം & ജലസേചന മാനേജ്മെന്റ്',
+      calendar: '📅 വിള കലണ്ടർ / ടൈംലൈൻ',
+      disease: '🐛 സസ്യ രോഗ കണ്ടെത്തൽ',
+      chat: '🗣️ AI കൃഷി ചാറ്റ്ബോട്ട്',
+      profit: '💰 ലാഭം & ചെലവ് കണക്ക്',
+      fertilizer: '🌱 വള ഉപദേഷ്ടാവ്',
+      rotation: '🔄 വിള ഭ്രമണ ആസൂത്രണം',
+      yield: '📊 വിളവ് പ്രവചനം',
+      alerts: '🔔 സ്മാർട്ട് അലേർട്ടുകൾ',
+      schemes: '📱 സർക്കാർ പദ്ധതികൾ',
+      analytics: '📈 കൃഷി വിശകലനം',
+      report: '📄 PDF റിപ്പോർട്ട് ജനറേറ്റർ',
+      sms: '💬 WhatsApp / SMS അലേർട്ട്',
+      climate: '🛰️ കാലാവസ്ഥ അപകട വിലയിരുത്തൽ',
+      iot: '🌡️ IoT ലൈവ് സെൻസർ ഡാറ്റ'
+    },
+    buttons: {
+      analyze: 'വിശകലനം',
+      submit: 'സമർപ്പിക്കുക',
+      generate: 'സൃഷ്ടിക്കുക',
+      predict: 'പ്രവചിക്കുക',
+      check: 'പരിശോധിക്കുക',
+      send: 'അയയ്ക്കുക',
+      refresh: 'പുതുക്കുക',
+      download: 'ഡൗൺലോഡ്',
+      simulate: '⚡ സെൻസർ അനുകരണം',
+      showTimeline: '📅 ടൈംലൈൻ കാണിക്കുക',
+      suggestCrop: '🔄 അടുത്ത വിള നിർദ്ദേശം',
+      getWeather: '🌦️ കാലാവസ്ഥ നോക്കുക',
+      getSchedule: '💧 ജലസേചന ഷെഡ്യൂൾ',
+      detectDisease: '🔬 രോഗം കണ്ടെത്തുക',
+      askAI: '🤖 AI ചോദിക്കുക',
+      calculate: '💰 ലാഭം കണക്കാക്കുക',
+      getFertilizer: '🌱 വള പദ്ധതി',
+      predictYield: '📊 വിളവ് പ്രവചനം',
+      getAlerts: '🔔 അലേർട്ടുകൾ',
+      getSchemes: '📱 പദ്ധതികൾ കണ്ടെത്തുക',
+      getAnalytics: '📈 വിശകലനം ലോഡ്',
+      generateReport: '📄 റിപ്പോർട്ട് സൃഷ്ടിക്കുക',
+      sendAlert: '📤 അലേർട്ട് അയയ്ക്കുക',
+      assessRisk: '🛰️ അപകട വിലയിരുത്തൽ'
+    },
+    labels: {
+      crop: 'വിള',
+      location: 'സ്ഥലം',
+      area: 'വിസ്തീർണ്ണം (ഏക്കർ)',
+      season: 'സീസൺ',
+      phone: 'ഫോൺ നമ്പർ',
+      message: 'സന്ദേശം'
+    }
+  }
+};
+
+// Apply content translations to the active panel and all panels
+function applyContentTranslation(lang) {
+  const ct = contentTranslations[lang];
+  if (!ct) return;
+  
+  // Translate all panel headings (h2)
+  document.querySelectorAll('.panel').forEach(panel => {
+    const id = panel.id;
+    const h2 = panel.querySelector('h2');
+    if (h2 && ct.headings[id]) {
+      h2.textContent = ct.headings[id];
+    }
+  });
+  
+  // Translate buttons based on their onclick or text content
+  // Button translation map - keys match onclick function names
+  const btnTranslations = {
+    en: {
+      analyzeSoil: '🔍 Analyze Soil', getWeather: '🌤️ Get 7-Day Forecast',
+      detectLocation: '📍 Detect Location', calcWater: '💧 Calculate Water Need',
+      getCalendar: '📅 Show Timeline', detectDisease: '🔬 Detect Disease',
+      sendChat: '📩 Send', startVoice: '🎤 Voice (Tamil/English)',
+      calcProfit: '💰 Calculate Profit', getFertilizer: '🌱 Get Advice',
+      getRotation: '🔄 Suggest Next Crop', predictYield: '📊 Predict Yield',
+      getAlerts: '🔔 Check Alerts', getSchemes: '📱 Show Schemes',
+      loadAnalytics: '📈 Load Profit Comparison Chart', loadWaterChart: '💧 Load Water Comparison Chart',
+      downloadReport: '📄 Download PDF Report', sendWhatsApp: '💬 Send WhatsApp Alert',
+      getClimateRisk: '🛰️ Analyze Climate Risk', detectLocationClimate: '📍 Auto Detect',
+      iotSimulate: '⚡ Simulate Sensor Reading', iotRefresh: '🔄 Refresh Data'
+    },
+    ta: {
+      analyzeSoil: '🔍 மண் பகுப்பாய்வு', getWeather: '🌤️ 7-நாள் வானிலை',
+      detectLocation: '📍 இருப்பிடம் கண்டறி', calcWater: '💧 நீர் தேவை கணக்கிடு',
+      getCalendar: '📅 காலக்கெடு காட்டு', detectDisease: '🔬 நோய் கண்டறி',
+      sendChat: '📩 அனுப்பு', startVoice: '🎤 குரல் (தமிழ்/ஆங்கிலம்)',
+      calcProfit: '💰 லாபம் கணக்கிடு', getFertilizer: '🌱 ஆலோசனை பெறு',
+      getRotation: '🔄 அடுத்த பயிர் பரிந்துரை', predictYield: '📊 மகசூல் கணிப்பு',
+      getAlerts: '🔔 எச்சரிக்கைகள் சரிபார்', getSchemes: '📱 திட்டங்கள் காட்டு',
+      loadAnalytics: '📈 லாப ஒப்பீடு வரைபடம்', loadWaterChart: '💧 நீர் ஒப்பீடு வரைபடம்',
+      downloadReport: '📄 PDF அறிக்கை பதிவிறக்கு', sendWhatsApp: '💬 WhatsApp எச்சரிக்கை அனுப்பு',
+      getClimateRisk: '🛰️ காலநிலை ஆபத்து பகுப்பாய்வு', detectLocationClimate: '📍 தானியங்கி கண்டறிதல்',
+      iotSimulate: '⚡ சென்சார் உருவகப்படுத்து', iotRefresh: '🔄 புதுப்பி'
+    },
+    hi: {
+      analyzeSoil: '🔍 मिट्टी विश्लेषण', getWeather: '🌤️ 7-दिन मौसम',
+      detectLocation: '📍 स्थान पहचानें', calcWater: '💧 पानी की जरूरत',
+      getCalendar: '📅 समयरेखा दिखाएं', detectDisease: '🔬 रोग पहचानें',
+      sendChat: '📩 भेजें', startVoice: '🎤 आवाज (तमिल/अंग्रेजी)',
+      calcProfit: '💰 लाभ गणना', getFertilizer: '🌱 सलाह लें',
+      getRotation: '🔄 अगली फसल सुझाव', predictYield: '📊 उपज भविष्यवाणी',
+      getAlerts: '🔔 अलर्ट जाँचें', getSchemes: '📱 योजनाएं दिखाएं',
+      loadAnalytics: '📈 लाभ तुलना चार्ट', loadWaterChart: '💧 पानी तुलना चार्ट',
+      downloadReport: '📄 PDF रिपोर्ट डाउनलोड', sendWhatsApp: '💬 WhatsApp अलर्ट भेजें',
+      getClimateRisk: '🛰️ जलवायु जोखिम विश्लेषण', detectLocationClimate: '📍 स्वत: पहचान',
+      iotSimulate: '⚡ सेंसर सिमुलेट', iotRefresh: '🔄 रिफ्रेश'
+    },
+    te: {
+      analyzeSoil: '🔍 నేల విశ్లేషణ', getWeather: '🌤️ 7-రోజుల వాతావరణం',
+      detectLocation: '📍 స్థానం గుర్తించు', calcWater: '💧 నీటి అవసరం లెక్కించు',
+      getCalendar: '📅 టైమ్లైన్ చూపు', detectDisease: '🔬 వ్యాధి గుర్తించు',
+      sendChat: '📩 పంపు', startVoice: '🎤 వాయిస్ (తమిళం/ఆంగ్లం)',
+      calcProfit: '💰 లాభం లెక్కించు', getFertilizer: '🌱 సలహా పొందు',
+      getRotation: '🔄 తదుపరి పంట సూచన', predictYield: '📊 దిగుబడి అంచనా',
+      getAlerts: '🔔 అలర్ట్లు తనిఖీ', getSchemes: '📱 పథకాలు చూపు',
+      loadAnalytics: '📈 లాభం పోలిక చార్ట్', loadWaterChart: '💧 నీటి పోలిక చార్ట్',
+      downloadReport: '📄 PDF రిపోర్ట్ డౌన్లోడ్', sendWhatsApp: '💬 WhatsApp అలర్ట్ పంపు',
+      getClimateRisk: '🛰️ వాతావరణ ప్రమాద విశ్లేషణ', detectLocationClimate: '📍 ఆటో గుర్తించు',
+      iotSimulate: '⚡ సెన్సార్ అనుకరణ', iotRefresh: '🔄 రిఫ్రెష్'
+    },
+    kn: {
+      analyzeSoil: '🔍 ಮಣ್ಣು ವಿಶ್ಲೇಷಣೆ', getWeather: '🌤️ 7-ದಿನ ಹವಾಮಾನ',
+      detectLocation: '📍 ಸ್ಥಳ ಗುರುತಿಸಿ', calcWater: '💧 ನೀರಿನ ಅಗತ್ಯ ಲೆಕ್ಕ',
+      getCalendar: '📅 ಟೈಮ್ಲೈನ್ ತೋರಿಸಿ', detectDisease: '🔬 ರೋಗ ಪತ್ತೆ',
+      sendChat: '📩 ಕಳುಹಿಸಿ', startVoice: '🎤 ಧ್ವನಿ (ತಮಿಳು/ಇಂಗ್ಲಿಷ್)',
+      calcProfit: '💰 ಲಾಭ ಲೆಕ್ಕ', getFertilizer: '🌱 ಸಲಹೆ ಪಡೆಯಿರಿ',
+      getRotation: '🔄 ಮುಂದಿನ ಬೆಳೆ ಸಲಹೆ', predictYield: '📊 ಇಳುವರಿ ಊಹೆ',
+      getAlerts: '🔔 ಎಚ್ಚರಿಕೆ ಪರಿಶೀಲಿಸಿ', getSchemes: '📱 ಯೋಜನೆಗಳು ತೋರಿಸಿ',
+      loadAnalytics: '📈 ಲಾಭ ಹೋಲಿಕೆ ಚಾರ್ಟ್', loadWaterChart: '💧 ನೀರು ಹೋಲಿಕೆ ಚಾರ್ಟ್',
+      downloadReport: '📄 PDF ವರದಿ ಡೌನ್ಲೋಡ್', sendWhatsApp: '💬 WhatsApp ಎಚ್ಚರಿಕೆ ಕಳುಹಿಸಿ',
+      getClimateRisk: '🛰️ ಹವಾಮಾನ ಅಪಾಯ ವಿಶ್ಲೇಷಣೆ', detectLocationClimate: '📍 ಸ್ವಯಂ ಗುರುತಿಸಿ',
+      iotSimulate: '⚡ ಸೆನ್ಸಾರ್ ಅನುಕರಣೆ', iotRefresh: '🔄 ರಿಫ್ರೆಶ್'
+    },
+    ml: {
+      analyzeSoil: '🔍 മണ്ണ് വിശകലനം', getWeather: '🌤️ 7-ദിവസ കാലാവസ്ഥ',
+      detectLocation: '📍 സ്ഥാനം കണ്ടെത്തുക', calcWater: '💧 ജല ആവശ്യം കണക്കാക്കുക',
+      getCalendar: '📅 ടൈംലൈൻ കാണിക്കുക', detectDisease: '🔬 രോഗം കണ്ടെത്തുക',
+      sendChat: '📩 അയയ്ക്കുക', startVoice: '🎤 ശബ്ദം (തമിഴ്/ഇംഗ്ലീഷ്)',
+      calcProfit: '💰 ലാഭം കണക്കാക്കുക', getFertilizer: '🌱 ഉപദേശം നേടുക',
+      getRotation: '🔄 അടുത്ത വിള നിർദ്ദേശം', predictYield: '📊 വിളവ് പ്രവചനം',
+      getAlerts: '🔔 അലേർട്ട് പരിശോധിക്കുക', getSchemes: '📱 പദ്ധതികൾ കാണിക്കുക',
+      loadAnalytics: '📈 ലാഭ താരതമ്യ ചാർട്ട്', loadWaterChart: '💧 ജല താരതമ്യ ചാർട്ട്',
+      downloadReport: '📄 PDF റിപ്പോർട്ട് ഡൗൺലോഡ്', sendWhatsApp: '💬 WhatsApp അലേർട്ട് അയയ്ക്കുക',
+      getClimateRisk: '🛰️ കാലാവസ്ഥ അപകട വിശകലനം', detectLocationClimate: '📍 ഓട്ടോ കണ്ടെത്തൽ',
+      iotSimulate: '⚡ സെൻസർ അനുകരണം', iotRefresh: '🔄 പുതുക്കുക'
+    }
+  };
+  
+  const btnLang = btnTranslations[lang] || btnTranslations['en'];
+  document.querySelectorAll('.panel button[onclick]').forEach(btn => {
+    const onclick = btn.getAttribute('onclick') || '';
+    for (const [fnName, label] of Object.entries(btnLang)) {
+      if (onclick.includes(fnName + '(') || onclick.includes(fnName + ')') || onclick === fnName + '()') {
+        btn.textContent = label;
+        break;
+      }
+    }
+  });
+  
+  document.querySelectorAll('.panel button').forEach(btn => {
+    const onclick = btn.getAttribute('onclick') || '';
+    for (const [fnName, label] of Object.entries(btnMap)) {
+      if (onclick.includes(fnName)) {
+        btn.textContent = label;
+        break;
+      }
+    }
+  });
+  
+  // Translate labels
+  document.querySelectorAll('.panel label').forEach(lbl => {
+    const text = lbl.textContent.trim().toLowerCase();
+    if (text.includes('crop') || text.includes('பயிர்') || text.includes('फसल') || text.includes('పంట') || text.includes('ಬೆಳೆ') || text.includes('വിള')) {
+      lbl.textContent = ct.labels.crop;
+    } else if (text.includes('location') || text.includes('city') || text.includes('இடம்') || text.includes('स्थान')) {
+      lbl.textContent = ct.labels.location;
+    } else if (text.includes('area') || text.includes('acre') || text.includes('பரப்பளவு')) {
+      lbl.textContent = ct.labels.area;
+    } else if (text.includes('season') || text.includes('பருவம்') || text.includes('मौसम')) {
+      lbl.textContent = ct.labels.season;
+    } else if (text.includes('phone') || text.includes('mobile') || text.includes('தொலைபேசி')) {
+      lbl.textContent = ct.labels.phone;
+    } else if (text.includes('message') || text.includes('செய்தி') || text.includes('संदेश')) {
+      lbl.textContent = ct.labels.message;
+    }
+  });
+  
+  // Translate panel hints/descriptions
+  const hintTranslations = {
+    en: {
+      soil: 'Upload a soil/land photo. AI detects soil type & suggests best crops.',
+      disease: 'Upload a leaf photo. AI checks plant health & suggests treatment.',
+      report: 'Fill details & download a professional PDF report for your farm.',
+      sms: 'Send a farming alert on WhatsApp — free, instant, no setup.',
+      climate: 'Crop-specific climate risk from live 7-day forecast.',
+      iot: 'Real-time data from ESP32 sensors (or simulated).'
+    },
+    ta: {
+      soil: 'மண்/நிலம் புகைப்படம் பதிவேற்றுங்கள். AI மண் வகை கண்டறிந்து சிறந்த பயிர்களை பரிந்துரைக்கும்.',
+      disease: 'இலை புகைப்படம் பதிவேற்றுங்கள். AI தாவர ஆரோக்கியத்தை சரிபார்க்கும்.',
+      report: 'விவரங்களை நிரப்பி PDF அறிக்கையை பதிவிறக்கம் செய்யுங்கள்.',
+      sms: 'WhatsApp இல் விவசாய எச்சரிக்கை அனுப்புங்கள் — இலவசம்.',
+      climate: '7 நாள் வானிலை அடிப்படையில் பயிர் காலநிலை ஆபத்து.',
+      iot: 'ESP32 சென்சார்களிலிருந்து நேரடி தரவு.'
+    },
+    hi: {
+      soil: 'मिट्टी/जमीन की फोटो अपलोड करें। AI मिट्टी का प्रकार पहचानेगा और सर्वोत्तम फसलें सुझाएगा।',
+      disease: 'पत्ती की फोटो अपलोड करें। AI पौधे के स्वास्थ्य की जाँच करेगा।',
+      report: 'विवरण भरें और PDF रिपोर्ट डाउनलोड करें।',
+      sms: 'WhatsApp पर खेती अलर्ट भेजें — मुफ्त।',
+      climate: '7-दिन मौसम पूर्वानुमान से फसल जलवायु जोखिम।',
+      iot: 'ESP32 सेंसर से रीयल-टाइम डेटा।'
+    },
+    te: {
+      soil: 'నేల/భూమి ఫోటో అప్లోడ్ చేయండి. AI నేల రకాన్ని గుర్తించి ఉత్తమ పంటలను సూచిస్తుంది.',
+      disease: 'ఆకు ఫోటో అప్లోడ్ చేయండి. AI మొక్క ఆరోగ్యాన్ని తనిఖీ చేస్తుంది.',
+      report: 'వివరాలు నింపి PDF రిపోర్ట్ డౌన్లోడ్ చేయండి.',
+      sms: 'WhatsApp లో వ్యవసాయ అలర్ట్ పంపండి — ఉచితం.',
+      climate: '7-రోజుల వాతావరణం ఆధారంగా పంట వాతావరణ ప్రమాదం.',
+      iot: 'ESP32 సెన్సార్ల నుండి రియల్-టైమ్ డేటా.'
+    },
+    kn: {
+      soil: 'ಮಣ್ಣು/ಭೂಮಿ ಫೋಟೋ ಅಪ್ಲೋಡ್ ಮಾಡಿ. AI ಮಣ್ಣಿನ ಪ್ರಕಾರ ಗುರುತಿಸಿ ಉತ್ತಮ ಬೆಳೆ ಸಲಹೆ ನೀಡುತ್ತದೆ.',
+      disease: 'ಎಲೆ ಫೋಟೋ ಅಪ್ಲೋಡ್ ಮಾಡಿ. AI ಸಸ್ಯ ಆರೋಗ್ಯ ಪರಿಶೀಲಿಸುತ್ತದೆ.',
+      report: 'ವಿವರ ತುಂಬಿ PDF ವರದಿ ಡೌನ್ಲೋಡ್ ಮಾಡಿ.',
+      sms: 'WhatsApp ನಲ್ಲಿ ಕೃಷಿ ಎಚ್ಚರಿಕೆ ಕಳುಹಿಸಿ — ಉಚಿತ.',
+      climate: '7-ದಿನ ಹವಾಮಾನ ಆಧಾರಿತ ಬೆಳೆ ಹವಾಮಾನ ಅಪಾಯ.',
+      iot: 'ESP32 ಸೆನ್ಸಾರ್‌ಗಳಿಂದ ರಿಯಲ್-ಟೈಮ್ ಡೇಟಾ.'
+    },
+    ml: {
+      soil: 'മണ്ണ്/ഭൂമി ഫോട്ടോ അപ്ലോഡ് ചെയ്യുക. AI മണ്ണിന്റെ തരം കണ്ടെത്തി മികച്ച വിളകൾ നിർദ്ദേശിക്കും.',
+      disease: 'ഇല ഫോട്ടോ അപ്ലോഡ് ചെയ്യുക. AI സസ്യ ആരോഗ്യം പരിശോധിക്കും.',
+      report: 'വിശദാംശങ്ങൾ നൽകി PDF റിപ്പോർട്ട് ഡൗൺലോഡ് ചെയ്യുക.',
+      sms: 'WhatsApp ൽ കൃഷി അലേർട്ട് അയയ്ക്കുക — സൗജന്യം.',
+      climate: '7-ദിവസ കാലാവസ്ഥ അടിസ്ഥാനമാക്കിയ വിള അപകട വിലയിരുത്തൽ.',
+      iot: 'ESP32 സെൻസറുകളിൽ നിന്നുള്ള തത്സമയ ഡാറ്റ.'
+    }
+  };
+  
+  // Apply hints
+  const ht = hintTranslations[lang];
+  if (ht) {
+    document.querySelectorAll('.panel').forEach(panel => {
+      const id = panel.id;
+      if (ht[id]) {
+        const hint = panel.querySelector('.hint');
+        if (hint) hint.textContent = ht[id];
+      }
+    });
+  }
+
+  // Translate Dashboard sidebar item too
+  const dashItem = document.querySelector('.sidebar-item[onclick*="dashboard"]');
+  if (dashItem) {
+    const icon = dashItem.querySelector('.s-icon');
+    const iconHTML = icon ? icon.outerHTML : '';
+    const dashLabels = {en:'Dashboard',ta:'முகப்பு',hi:'डैशबोर्ड',te:'డాష్బోర్డ్',kn:'ಡ್ಯಾಶ್ಬೋರ್ಡ್',ml:'ഡാഷ്ബോർഡ്'};
+    dashItem.innerHTML = iconHTML + ' ' + (dashLabels[lang] || 'Dashboard');
+  }
+  
+  // Store current language for dynamic content
+  window.currentContentLang = lang;
+}
+
+const translations = {
+  en: {
+    title: 'Agri Gram AI',
+    subtitle: 'Smart Farming Assistant',
+    tabs: ['Soil→Crop','Weather','Water','Calendar','Disease','Chat','Profit','Fertilizer','Rotation','Yield','Alerts','Schemes','Analytics','PDF Report','WhatsApp Alert','Climate Risk','IoT Live']
+  },
+  ta: {
+    title: 'அக்ரி கிராம் AI',
+    subtitle: 'ஸ்மார்ட் விவசாய உதவியாளர்',
+    tabs: ['மண்→பயிர்','வானிலை','நீர்','நாட்காட்டி','நோய்','அரட்டை','லாபம்','உரம்','சுழற்சி','மகசூல்','எச்சரிக்கை','திட்டங்கள்','பகுப்பாய்வு','PDF அறிக்கை','WhatsApp','காலநிலை ஆபத்து','IoT நேரடி']
+  },
+  hi: {
+    title: 'एग्री ग्राम AI',
+    subtitle: 'स्मार्ट खेती सहायक',
+    tabs: ['मिट्टी→फसल','मौसम','पानी','कैलेंडर','रोग','चैट','लाभ','उर्वरक','चक्रण','उपज','अलर्ट','योजनाएं','एनालिटिक्स','PDF रिपोर्ट','WhatsApp','जलवायु जोखिम','IoT लाइव']
+  },
+  te: {
+    title: 'అగ్రి గ్రామ్ AI',
+    subtitle: 'స్మార్ట్ వ్యవసాయ సహాయకుడు',
+    tabs: ['నేల→పంట','వాతావరణం','నీరు','క్యాలెండర్','వ్యాధి','చాట్','లాభం','ఎరువు','భ్రమణం','దిగుబడి','అలర్ట్','పథకాలు','విశ్లేషణ','PDF రిపోర్ట్','WhatsApp','వాతావరణ ప్రమాదం','IoT లైవ్']
+  },
+  kn: {
+    title: 'ಅಗ್ರಿ ಗ್ರಾಮ್ AI',
+    subtitle: 'ಸ್ಮಾರ್ಟ್ ಕೃಷಿ ಸಹಾಯಕ',
+    tabs: ['ಮಣ್ಣು→ಬೆಳೆ','ಹವಾಮಾನ','ನೀರು','ಕ್ಯಾಲೆಂಡರ್','ರೋಗ','ಚಾಟ್','ಲಾಭ','ಗೊಬ್ಬರ','ತಿರುಗುವಿಕೆ','ಇಳುವರಿ','ಎಚ್ಚರಿಕೆ','ಯೋಜನೆ','ವಿಶ್ಲೇಷಣೆ','PDF ವರದಿ','WhatsApp','ಹವಾಮಾನ ಅಪಾಯ','IoT ಲೈವ್']
+  },
+  ml: {
+    title: 'അഗ്രി ഗ്രാം AI',
+    subtitle: 'സ്മാർട്ട് കൃഷി സഹായി',
+    tabs: ['മണ്ണ്→വിള','കാലാവസ്ഥ','വെള്ളം','കലണ്ടർ','രോഗം','ചാറ്റ്','ലാഭം','വളം','ഭ്രമണം','വിളവ്','അലേർട്ട്','പദ്ധതികൾ','അനലിറ്റിക്സ്','PDF റിപ്പോർട്ട്','WhatsApp','കാലാവസ്ഥ അപകടം','IoT ലൈവ്']
+  }
+};
+
+let currentLang = 'en';
+
+function toggleLangMenu() {
+  document.getElementById('langDropdown').classList.toggle('show');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.classList.contains('lang-btn') && !e.target.closest('.lang-dropdown')) {
+    document.getElementById('langDropdown').classList.remove('show');
+  }
+});
+
+function setLang(lang, label) {
+  currentLang = lang;
+  // Update button text
+  document.querySelector('.lang-btn').textContent = '🌐 ' + label + ' ▾';
+  // Update active state in dropdown
+  document.querySelectorAll('.lang-option').forEach(el => el.classList.remove('active'));
+  event.target.classList.add('active');
+  // Close dropdown
+  document.getElementById('langDropdown').classList.remove('show');
+  // Apply translations
+  applyTranslation(lang);
+}
+
+function applyTranslation(lang) {
+  const t = translations[lang];
+  if (!t) return;
+  // Update header/logo
+  const logoH1 = document.querySelector('.nav-logo h1');
+  const logoP = document.querySelector('.nav-logo p');
+  if (logoH1) logoH1.textContent = t.title.replace('🌾 ', '');
+  if (logoP) logoP.textContent = t.subtitle;
+  // Update sidebar labels (skip first item = Dashboard)
+  const items = document.querySelectorAll('.sidebar-item');
+  // First item is Dashboard (index 0), features start at index 1
+  t.tabs.forEach((label, i) => {
+    const item = items[i + 1]; // +1 because Dashboard is first
+    if (item) {
+      const icon = item.querySelector('.s-icon');
+      const iconText = icon ? icon.outerHTML : '';
+      item.innerHTML = iconText + ' ' + label;
+    }
+  });
+  // Also translate content inside panels
+  applyContentTranslation(lang);
+}
+
+
+// ===== Profile Dropdown Functions =====
+
+function toggleThemeFromMenu() {
+  toggleTheme();
+  // Close dropdown
+  document.getElementById('profileDropdown').classList.remove('show');
+  document.getElementById('profileBtn').classList.remove('open');
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// Update theme label on load
+function updateThemeLabel() {
+  const isDark = document.body.classList.contains('dark-mode');
+  const icon = document.getElementById('themeIcon');
+  const label = document.getElementById('themeLabel');
+  if (icon) icon.textContent = isDark ? '☀️' : '🌙';
+  if (label) label.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+}
+
+function initProfile() {
+  const raw = localStorage.getItem('agri_user');
+  if (!raw) return;
+  let userData;
+  try { userData = JSON.parse(raw); } catch(e) { return; }
+  const name = userData.name || userData.username || 'User';
+  const username = userData.username || 'user';
+  const role = userData.role || 'user';
+  const location = userData.location || 'Coimbatore';
+  const initial = name.charAt(0).toUpperCase();
+
+  // Update top bar
+  document.getElementById('profileAvatar').textContent = initial;
+  document.getElementById('profileName').textContent = name;
+  document.getElementById('profileAvatarLg').textContent = initial;
+  document.getElementById('profileFullName').textContent = name;
+  document.getElementById('profileRole').textContent = role.charAt(0).toUpperCase() + role.slice(1);
+
+  // Update profile page
+  document.getElementById('profileBigAvatar').textContent = initial;
+  document.getElementById('profilePageName').textContent = name;
+  document.getElementById('profilePageRole').textContent = '🏷️ Role: ' + role;
+  document.getElementById('profilePageLocation').textContent = '📍 Location: ' + location;
+  document.getElementById('profileUsername').textContent = username;
+  document.getElementById('profileNameField').textContent = name;
+  document.getElementById('profileRoleField').textContent = role;
+  document.getElementById('profileLocationField').textContent = location;
+  document.getElementById('editName').value = name;
+  document.getElementById('editLocation').value = location;
+}
+
+function toggleProfileMenu() {
+  const dropdown = document.getElementById('profileDropdown');
+  const btn = document.getElementById('profileBtn');
+  dropdown.classList.toggle('show');
+  btn.classList.toggle('open');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  const profileArea = document.querySelector('.profile-area');
+  if (profileArea && !profileArea.contains(e.target)) {
+    document.getElementById('profileDropdown').classList.remove('show');
+    document.getElementById('profileBtn').classList.remove('open');
+  }
+});
+
+function showProfileSection(section) {
+  // Hide dropdown
+  document.getElementById('profileDropdown').classList.remove('show');
+  document.getElementById('profileBtn').classList.remove('open');
+
+  // Deactivate all sidebar items and panels
+  document.querySelectorAll('.sidebar-item').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+
+  // Show the requested panel
+  const panel = document.getElementById(section);
+  if (panel) {
+    panel.classList.add('active');
+  }
+}
+
+function updateProfile() {
+  const newName = document.getElementById('editName').value.trim();
+  const newLocation = document.getElementById('editLocation').value.trim();
+  if (!newName) { document.getElementById('profileMsg').textContent = '⚠️ Name cannot be empty!'; return; }
+
+  const userData = JSON.parse(localStorage.getItem('agri_user') || '{}');
+  userData.name = newName;
+  userData.location = newLocation;
+  localStorage.setItem('agri_user', JSON.stringify(userData));
+
+  initProfile();
+  document.getElementById('profileMsg').textContent = '✅ Profile updated successfully!';
+  setTimeout(() => { document.getElementById('profileMsg').textContent = ''; }, 3000);
+}
+
+// Initialize profile on page load
+document.addEventListener('DOMContentLoaded', initProfile);
+// Also run immediately in case DOM is already ready
+if (document.readyState !== 'loading') { initProfile(); updateThemeLabel(); }
+window.addEventListener('load', function(){ initProfile(); updateThemeLabel(); });
+
+
+</script>
+</body>
+</html>

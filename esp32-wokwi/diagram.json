@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "author": "Abinaya K",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-esp32-devkit-v1", "id": "esp", "top": 0, "left": 0 },
+    { "type": "wokwi-dht22", "id": "dht1", "top": -80, "left": 200 },
+    { "type": "wokwi-potentiometer", "id": "soil1", "top": -80, "left": 400, "attrs": {"label": "Soil Moisture"} }
+  ],
+  "connections": [
+    [ "dht1:VCC", "esp:3V3", "red", [] ],
+    [ "dht1:GND", "esp:GND.1", "black", [] ],
+    [ "dht1:SDA", "esp:15", "green", [] ],
+    [ "soil1:VCC", "esp:3V3", "red", [] ],
+    [ "soil1:GND", "esp:GND.2", "black", [] ],
+    [ "soil1:SIG", "esp:34", "orange", [] ],
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ]
+  ]
+}

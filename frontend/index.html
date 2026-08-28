@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌾 Agri Gram AI - Login</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif; }
+  body { background:linear-gradient(135deg,#1b5e20,#2e7d32,#43a047); min-height:100vh;
+         display:flex; align-items:center; justify-content:center; }
+  .login-container { background:rgba(255,255,255,0.12); backdrop-filter:blur(12px);
+         border-radius:20px; padding:40px; width:380px; max-width:90%;
+         border:1px solid rgba(255,255,255,0.2); box-shadow:0 8px 32px rgba(0,0,0,0.3); }
+  .logo { text-align:center; margin-bottom:24px; }
+  .logo h1 { font-size:32px; color:#fff; }
+  .logo p { color:#c8e6c9; font-size:14px; margin-top:4px; }
+  .form-group { margin-bottom:16px; }
+  .form-group label { display:block; color:#c8e6c9; font-size:13px; margin-bottom:6px; }
+  .form-group input { width:100%; padding:14px 16px; border-radius:12px; border:none;
+         font-size:15px; background:rgba(255,255,255,0.15); color:#fff;
+         outline:none; transition:0.3s; }
+  .form-group input::placeholder { color:rgba(255,255,255,0.5); }
+  .form-group input:focus { background:rgba(255,255,255,0.25); box-shadow:0 0 0 2px #69f0ae; }
+  .login-btn { width:100%; padding:14px; border:none; border-radius:12px;
+         background:#ffca28; color:#1b5e20; font-size:16px; font-weight:700;
+         cursor:pointer; transition:0.3s; margin-top:8px; }
+  .login-btn:hover { background:#ffd54f; transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.2); }
+  .error-msg { color:#ff5252; font-size:13px; text-align:center; margin-top:12px; display:none; }
+  .register-link { text-align:center; margin-top:16px; color:#c8e6c9; font-size:13px; }
+  .register-link a { color:#69f0ae; text-decoration:none; font-weight:600; }
+  .register-link a:hover { text-decoration:underline; }
+  .features-hint { text-align:center; margin-top:20px; padding-top:16px;
+         border-top:1px solid rgba(255,255,255,0.15); }
+  .features-hint p { color:rgba(255,255,255,0.6); font-size:11px; }
+
+  /* Register form (hidden initially) */
+  .register-form { display:none; }
+  .back-btn { background:transparent; border:1px solid rgba(255,255,255,0.3); color:#fff; }
+  .back-btn:hover { background:rgba(255,255,255,0.1); transform:none; }
+</style>
+</head>
+<body>
+
+<div class="login-container">
+  <!-- LOGIN FORM -->
+  <div id="loginForm">
+    <div class="logo">
+      <h1>🌾 Agri Gram AI</h1>
+      <p>Smart Farming Assistant</p>
+    </div>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="loginUser" placeholder="Enter username">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="loginPass" placeholder="Enter password">
+    </div>
+    <button class="login-btn" onclick="doLogin()">🔐 Login</button>
+    <div class="error-msg" id="loginError">Invalid username or password!</div>
+    <div class="register-link">
+      Don't have an account? <a href="#" onclick="showRegister()">Register</a>
+    </div>
+    <div class="features-hint">
+      <p>18 AI features • Climate Risk Score • IoT Monitoring • Tamil Support</p>
+    </div>
+  </div>
+
+  <!-- REGISTER FORM -->
+  <div id="registerForm" class="register-form">
+    <div class="logo">
+      <h1>🌾 Register</h1>
+      <p>Create your farmer account</p>
+    </div>
+    <div class="form-group">
+      <label>Full Name</label>
+      <input type="text" id="regName" placeholder="Enter your name">
+    </div>
+    <div class="form-group">
+      <label>Location</label>
+      <input type="text" id="regLocation" placeholder="Your city/village" value="Coimbatore">
+    </div>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="regUser" placeholder="Choose username">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="regPass" placeholder="Choose password">
+    </div>
+    <button class="login-btn" onclick="doRegister()">✅ Register</button>
+    <div class="error-msg" id="regError"></div>
+    <div style="margin-top:12px;">
+      <button class="login-btn back-btn" onclick="showLogin()">← Back to Login</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = window.location.origin + '/api';
+
+// Check if already logged in
+if (localStorage.getItem('agri_user')) {
+  window.location.href = 'dashboard.html';
+}
+
+async function doLogin() {
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPass').value.trim();
+  const errorEl = document.getElementById('loginError');
+  errorEl.style.display = 'none';
+
+  if (!username || !password) {
+    errorEl.textContent = 'Please enter username and password!';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  try {
+    const res = await fetch(API + '/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username, password})
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      // Save user info in localStorage
+      localStorage.setItem('agri_user', JSON.stringify(data));
+      window.location.href = 'dashboard.html';
+    } else {
+      errorEl.textContent = data.error || 'Invalid username or password!';
+      errorEl.style.display = 'block';
+    }
+  } catch(e) {
+    errorEl.textContent = 'Server not running! Start python app.py first.';
+    errorEl.style.display = 'block';
+  }
+}
+
+async function doRegister() {
+  const name = document.getElementById('regName').value.trim();
+  const location = document.getElementById('regLocation').value.trim();
+  const username = document.getElementById('regUser').value.trim();
+  const password = document.getElementById('regPass').value.trim();
+  const errorEl = document.getElementById('regError');
+  errorEl.style.display = 'none';
+
+  if (!name || !username || !password) {
+    errorEl.textContent = 'Fill all fields!';
+    errorEl.style.display = 'block';
+    errorEl.style.color = '#ff5252';
+    return;
+  }
+
+  try {
+    const res = await fetch(API + '/register', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username, password, name, location})
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      errorEl.textContent = '✅ Registration successful! Please login.';
+      errorEl.style.display = 'block';
+      errorEl.style.color = '#69f0ae';
+      setTimeout(() => showLogin(), 1500);
+    } else {
+      errorEl.textContent = data.error || 'Registration failed!';
+      errorEl.style.display = 'block';
+      errorEl.style.color = '#ff5252';
+    }
+  } catch(e) {
+    errorEl.textContent = 'Server not running!';
+    errorEl.style.display = 'block';
+    errorEl.style.color = '#ff5252';
+  }
+}
+
+function showRegister() {
+  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('registerForm').style.display = 'block';
+}
+
+function showLogin() {
+  document.getElementById('registerForm').style.display = 'none';
+  document.getElementById('loginForm').style.display = 'block';
+}
+
+// Enter key support
+document.addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') {
+    if (document.getElementById('loginForm').style.display !== 'none') {
+      doLogin();
+    } else {
+      doRegister();
+    }
+  }
+});
+</script>
+</body>
+</html>

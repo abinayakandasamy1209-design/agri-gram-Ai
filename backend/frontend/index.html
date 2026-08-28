@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌾 Agri Gram AI</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif; }
+  body { background:linear-gradient(135deg,#1b5e20,#2e7d32,#43a047); color:#fff; min-height:100vh; }
+  header { text-align:center; padding:28px 16px 12px; }
+  header h1 { font-size:32px; }
+  header p { color:#c8e6c9; margin-top:4px; }
+
+  /* Layout: left sidebar menu + right content */
+  .layout { display:flex; align-items:flex-start; gap:20px; max-width:1100px;
+            margin:0 auto; padding:16px; }
+  .tabs { display:flex; flex-direction:column; gap:6px;
+          width:220px; flex-shrink:0; position:sticky; top:16px; }
+  .tab { background:rgba(255,255,255,0.12); padding:11px 16px; border-radius:10px;
+         cursor:pointer; font-size:14px; font-weight:600; transition:0.2s;
+         text-align:left; }
+  .tab:hover { background:rgba(255,255,255,0.25); }
+  .tab.active { background:#fff; color:#1b5e20; }
+  .container { flex:1; min-width:0; }
+  .panel { display:none; background:rgba(255,255,255,0.1); border-radius:16px;
+           padding:24px; backdrop-filter:blur(8px); }
+  .panel.active { display:block; animation:fade 0.3s; }
+
+  /* On small screens, stack the menu on top */
+  @media (max-width:700px) {
+    .layout { flex-direction:column; }
+    .tabs { flex-direction:row; flex-wrap:wrap; width:100%; position:static; }
+    .tab { font-size:12px; padding:8px 12px; }
+  }
+  @keyframes fade { from{opacity:0;transform:translateY(10px);} to{opacity:1;} }
+  h2 { margin-bottom:16px; }
+  input, select, button, textarea {
+    width:100%; padding:12px; margin:8px 0; border-radius:10px; border:none; font-size:15px; }
+  label { font-size:13px; color:#c8e6c9; display:block; margin-top:8px; }
+  button { background:#ffca28; color:#1b5e20; font-weight:700; cursor:pointer; transition:0.2s; }
+  button:hover { background:#ffd54f; transform:translateY(-2px); }
+  .result { background:rgba(0,0,0,0.25); border-radius:12px; padding:16px; margin-top:16px; }
+  .card { background:rgba(255,255,255,0.12); border-radius:10px; padding:12px; margin:8px 0;
+          border-left:4px solid #ffca28; }
+  .card h4 { color:#ffe082; margin-bottom:6px; }
+  .big { font-size:22px; font-weight:700; color:#69f0ae; }
+  table { width:100%; border-collapse:collapse; margin-top:8px; }
+  th,td { padding:8px; text-align:left; border-bottom:1px solid rgba(255,255,255,0.2); font-size:14px; }
+  th { color:#ffe082; }
+  .chat-box { max-height:300px; overflow-y:auto; margin-bottom:12px; }
+  .msg { padding:10px 14px; border-radius:14px; margin:6px 0; max-width:80%; font-size:14px; }
+  .msg.user { background:#ffca28; color:#1b5e20; margin-left:auto; }
+  .msg.bot { background:rgba(255,255,255,0.15); }
+  .hint { font-size:12px; color:#c8e6c9; margin-top:4px; }
+  img.preview { max-width:150px; border-radius:10px; margin:8px 0; }
+  .mic { background:#ff5252; color:#fff; }
+  .mic.listening { background:#d32f2f; animation:pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.6;} }
+
+  /* Language Dropdown */
+  .lang-btn { position:fixed; top:16px; right:16px; z-index:9999;
+    background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3);
+    padding:8px 14px; border-radius:10px; cursor:pointer; font-size:14px;
+    color:#fff; font-weight:600; backdrop-filter:blur(8px); transition:0.2s; width:auto; }
+  .lang-btn:hover { background:rgba(255,255,255,0.3); }
+  .lang-dropdown { display:none; position:fixed; top:52px; right:16px; z-index:9999;
+    background:rgba(27,94,32,0.95); border:1px solid rgba(255,255,255,0.2);
+    border-radius:12px; overflow:hidden; backdrop-filter:blur(12px);
+    box-shadow:0 8px 32px rgba(0,0,0,0.3); }
+
+  /* Dark/Light Mode Toggle */
+  .theme-btn { position:fixed; top:16px; right:140px; z-index:9999;
+    background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3);
+    padding:8px 14px; border-radius:10px; cursor:pointer; font-size:16px;
+    color:#fff; font-weight:600; backdrop-filter:blur(8px); transition:0.3s; width:auto; }
+  .theme-btn:hover { background:rgba(255,255,255,0.3); transform:scale(1.05); }
+
+  /* Light Mode Styles */
+  body.light-mode { background:linear-gradient(135deg,#e8f5e9,#c8e6c9,#a5d6a7); color:#1b5e20; }
+  body.light-mode header p { color:#2e7d32; }
+  body.light-mode .tab { background:rgba(27,94,32,0.1); color:#1b5e20; }
+  body.light-mode .tab:hover { background:rgba(27,94,32,0.2); }
+  body.light-mode .tab.active { background:#1b5e20; color:#fff; }
+  body.light-mode .panel { background:rgba(255,255,255,0.7); color:#1b5e20; }
+  body.light-mode .result { background:rgba(27,94,32,0.1); color:#1b5e20; }
+  body.light-mode .card { background:rgba(27,94,32,0.08); border-left-color:#1b5e20; }
+  body.light-mode .card h4 { color:#2e7d32; }
+  body.light-mode .hint { color:#388e3c; }
+  body.light-mode label { color:#2e7d32; }
+  body.light-mode .big { color:#1b5e20; }
+  body.light-mode input, body.light-mode select, body.light-mode textarea { background:#fff; color:#1b5e20; border:1px solid #a5d6a7; }
+  body.light-mode .msg.bot { background:rgba(27,94,32,0.1); color:#1b5e20; }
+  body.light-mode .lang-btn, body.light-mode .theme-btn { color:#1b5e20; border-color:#2e7d32; background:rgba(255,255,255,0.7); }
+  body.light-mode .lang-dropdown { background:rgba(255,255,255,0.95); }
+  body.light-mode .lang-option { color:#1b5e20; border-bottom-color:rgba(27,94,32,0.1); }
+  body.light-mode .lang-option:hover { background:rgba(27,94,32,0.1); }
+  body.light-mode th { color:#1b5e20; }
+  .lang-dropdown.show { display:block; animation:fade 0.2s; }
+  .lang-option { padding:12px 20px; cursor:pointer; font-size:14px; color:#fff;
+    transition:0.2s; border-bottom:1px solid rgba(255,255,255,0.1); }
+  .lang-option:last-child { border-bottom:none; }
+  .lang-option:hover { background:rgba(255,255,255,0.15); }
+  .lang-option.active { background:rgba(255,202,40,0.2); color:#ffca28; }
+</style>
+</head>
+<body>
+
+<!-- Language Button -->
+<button class="lang-btn" onclick="toggleLangMenu()">🇮🇳 English ▾</button>
+<button class="theme-btn" onclick="toggleTheme()" title="Dark/Light Mode">🌙</button>
+<div class="lang-dropdown" id="langDropdown">
+  <div class="lang-option active" onclick="setLang('en','English')">🇮🇳 English</div>
+  <div class="lang-option" onclick="setLang('ta','தமிழ்')">🇮🇳 தமிழ் (Tamil)</div>
+  <div class="lang-option" onclick="setLang('hi','हिन्दी')">🇮🇳 हिन्दी (Hindi)</div>
+  <div class="lang-option" onclick="setLang('te','తెలుగు')">🇮🇳 తెలుగు (Telugu)</div>
+  <div class="lang-option" onclick="setLang('kn','ಕನ್ನಡ')">🇮🇳 ಕನ್ನಡ (Kannada)</div>
+  <div class="lang-option" onclick="setLang('ml','മലയാളം')">🇮🇳 മലയാളം (Malayalam)</div>
+</div>
+
+<header>
+  <h1>🌾 Agri Gram AI</h1>
+  <p>Smart Farming Assistant &middot; by Abinaya K</p>
+</header>
+
+<div class="layout">
+<div class="tabs">
+  <div class="tab active" onclick="show('soil',this)">📸 Soil→Crop</div>
+  <div class="tab" onclick="show('weather',this)">🌦️ Weather</div>
+  <div class="tab" onclick="show('water',this)">💧 Water</div>
+  <div class="tab" onclick="show('calendar',this)">📅 Calendar</div>
+  <div class="tab" onclick="show('disease',this)">🐛 Disease</div>
+  <div class="tab" onclick="show('chat',this)">🗣️ Chat</div>
+  <div class="tab" onclick="show('profit',this)">💰 Profit</div>
+  <div class="tab" onclick="show('fertilizer',this)">🌱 Fertilizer</div>
+  <div class="tab" onclick="show('rotation',this)">🔄 Rotation</div>
+  <div class="tab" onclick="show('yield',this)">📊 Yield</div>
+  <div class="tab" onclick="show('alerts',this)">🔔 Alerts</div>
+  <div class="tab" onclick="show('schemes',this)">📱 Schemes</div>
+  <div class="tab" onclick="show('analytics',this)">📈 Analytics</div>
+  <div class="tab" onclick="show('report',this)">📄 PDF Report</div>
+  <div class="tab" onclick="show('sms',this)">💬 WhatsApp Alert</div>
+  <div class="tab" onclick="show('climate',this)">🛰️ Climate Risk</div>
+  <div class="tab" onclick="show('iot',this)">🌡️ IoT Live</div>
+</div>
+
+<div class="container">
+
+  <!-- SOIL -->
+  <div class="panel active" id="soil">
+    <h2>📸 Soil Photo → Crop Recommendation</h2>
+    <p class="hint">Upload a soil/land photo. AI detects soil type & suggests best crops.</p>
+    <input type="file" id="soilImg" accept="image/*" onchange="preview('soilImg','soilPrev')">
+    <img id="soilPrev" class="preview" style="display:none">
+    <select id="soilSeason">
+      <option value="kharif">Kharif (June-Oct, Monsoon)</option>
+      <option value="rabi">Rabi (Oct-March, Winter)</option>
+      <option value="zaid">Zaid (March-June, Summer)</option>
+    </select>
+    <button onclick="analyzeSoil()">🔍 Analyze Soil</button>
+    <div id="soilResult"></div>
+  </div>
+
+  <!-- WEATHER -->
+  <div class="panel" id="weather">
+    <h2>🌦️ Weather Forecast + Advice</h2>
+    <input type="text" id="city" placeholder="City or click Detect 📍" value="Coimbatore">
+    <div style="display:flex;gap:8px;">
+      <button onclick="getWeather()" style="flex:1;">🌤️ Get 7-Day Forecast</button>
+      <button onclick="detectLocation()" style="flex:0.6;background:#4caf50;color:#fff;">📍 Detect Location</button>
+    </div>
+    <div id="weatherResult"></div>
+  </div>
+
+  <!-- WATER -->
+  <div class="panel" id="water">
+    <h2>💧 Smart Water Requirement</h2>
+    <label>Crop</label><select id="waterCrop"></select>
+    <label>Area (acres)</label><input type="number" id="area" value="1">
+    <label>Temperature °C</label><input type="number" id="temp" value="30">
+    <label>Rainfall mm</label><input type="number" id="rain" value="0">
+    <button onclick="calcWater()">💧 Calculate Water Need</button>
+    <div id="waterResult"></div>
+  </div>
+
+  <!-- CALENDAR -->
+  <div class="panel" id="calendar">
+    <h2>📅 Crop Calendar / Timeline</h2>
+    <select id="calCrop"></select>
+    <button onclick="getCalendar()">📅 Show Timeline</button>
+    <div id="calResult"></div>
+  </div>
+
+  <!-- DISEASE -->
+  <div class="panel" id="disease">
+    <h2>🐛 Plant Disease Detection</h2>
+    <p class="hint">Upload a leaf photo. AI checks plant health & suggests treatment.</p>
+    <input type="file" id="leafImg" accept="image/*" onchange="preview('leafImg','leafPrev')">
+    <img id="leafPrev" class="preview" style="display:none">
+    <button onclick="detectDisease()">🔬 Detect Disease</button>
+    <div id="diseaseResult"></div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="panel" id="chat">
+    <h2>🗣️ Tamil AI Chat Assistant</h2>
+    <div class="chat-box" id="chatBox">
+      <div class="msg bot">வணக்கம்! 🌾 நான் Agri Gram AI. தண்ணீர், உரம், பூச்சி, பருவம் பற்றி கேளுங்கள்.</div>
+    </div>
+    <input type="text" id="chatInput" placeholder="கேள்வி கேளுங்கள்... (Ask a question)" onkeypress="if(event.key==='Enter')sendChat()">
+    <button onclick="sendChat()">📩 Send</button>
+    <button class="mic" id="micBtn" onclick="startVoice()">🎤 Voice (Tamil/English)</button>
+  </div>
+
+  <!-- PROFIT -->
+  <div class="panel" id="profit">
+    <h2>💰 Profit Calculator</h2>
+    <label>Crop</label><select id="profitCrop"></select>
+    <label>Area (acres)</label><input type="number" id="profitArea" value="1">
+    <label>Market price ₹/kg (optional)</label><input type="number" id="profitPrice" placeholder="Leave blank for default">
+    <button onclick="calcProfit()">💰 Calculate Profit</button>
+    <div id="profitResult"></div>
+  </div>
+
+  <!-- FERTILIZER -->
+  <div class="panel" id="fertilizer">
+    <h2>🌱 Fertilizer & Pesticide Advisor</h2>
+    <select id="fertCrop"></select>
+    <button onclick="getFertilizer()">🌱 Get Advice</button>
+    <div id="fertResult"></div>
+  </div>
+
+  <!-- ROTATION -->
+  <div class="panel" id="rotation">
+    <h2>🔄 Crop Rotation Planner</h2>
+    <label>Current / Last crop</label><select id="rotCrop"></select>
+    <button onclick="getRotation()">🔄 Suggest Next Crop</button>
+    <div id="rotResult"></div>
+  </div>
+
+  <!-- YIELD -->
+  <div class="panel" id="yield">
+    <h2>📊 Yield Prediction</h2>
+    <label>Crop</label><select id="yieldCrop"></select>
+    <label>Area (acres)</label><input type="number" id="yieldArea" value="1">
+    <label>Expected rainfall mm</label><input type="number" id="yieldRain" value="800">
+    <label>Soil quality</label>
+    <select id="yieldSoil">
+      <option value="poor">Poor</option>
+      <option value="average">Average</option>
+      <option value="good" selected>Good</option>
+      <option value="excellent">Excellent</option>
+    </select>
+    <button onclick="predictYield()">📊 Predict Yield</button>
+    <div id="yieldResult"></div>
+  </div>
+
+  <!-- ALERTS -->
+  <div class="panel" id="alerts">
+    <h2>🔔 Smart Weather Alerts</h2>
+    <label>Temperature °C</label><input type="number" id="alertTemp" value="35">
+    <label>Rainfall mm</label><input type="number" id="alertRain" value="0">
+    <label>Humidity %</label><input type="number" id="alertHum" value="60">
+    <button onclick="getAlerts()">🔔 Check Alerts</button>
+    <div id="alertResult"></div>
+  </div>
+
+  <!-- SCHEMES -->
+  <div class="panel" id="schemes">
+    <h2>📱 Government Schemes for Farmers</h2>
+    <input type="text" id="schemeQuery" placeholder="Search (optional) e.g. loan, insurance">
+    <button onclick="getSchemes()">📱 Show Schemes</button>
+    <div id="schemeResult"></div>
+  </div>
+
+  <!-- ANALYTICS -->
+  <div class="panel" id="analytics">
+    <h2>📈 Profit Analytics</h2>
+    <button onclick="loadAnalytics()">📈 Load Profit Comparison Chart</button>
+    <div class="result"><canvas id="profitChart" height="220"></canvas></div>
+    <div id="analyticsNote"></div>
+    <button onclick="loadWaterChart()" style="margin-top:12px">💧 Load Water Comparison Chart</button>
+    <div class="result"><canvas id="waterChart" height="220"></canvas></div>
+  </div>
+
+  <!-- PDF REPORT -->
+  <div class="panel" id="report">
+    <h2>📄 Farm Report (PDF)</h2>
+    <p class="hint">Fill details & download a professional PDF report for your farm.</p>
+    <label>Farmer Name</label><input type="text" id="rFarmer" placeholder="Your name">
+    <label>Location</label><input type="text" id="rLocation" value="Coimbatore">
+    <label>Crop</label><select id="rCrop"></select>
+    <label>Soil Type</label><input type="text" id="rSoil" placeholder="e.g. Red Soil">
+    <label>Notes (optional)</label><textarea id="rNotes" placeholder="Any extra notes..."></textarea>
+    <button onclick="downloadReport()">📄 Download PDF Report</button>
+    <div id="reportResult"></div>
+  </div>
+
+  <!-- SMS ALERT -->
+  <div class="panel" id="sms">
+    <h2>💬 WhatsApp Alert to Farmer</h2>
+    <p class="hint">Send a farming alert on WhatsApp — free, instant, no setup. Opens WhatsApp with the message ready to send.</p>
+    <label>Farmer's WhatsApp number (10 digit)</label>
+    <input type="text" id="smsPhone" placeholder="9486775570">
+    <label>Crop</label><select id="smsCrop"></select>
+    <label>Alert message / advice</label>
+    <input type="text" id="smsAdvice" value="Rain expected tomorrow - hold irrigation.">
+    <button onclick="sendWhatsApp()">💬 Send WhatsApp Alert</button>
+    <div id="smsResult"></div>
+  </div>
+
+  <!-- CLIMATE RISK -->
+  <div class="panel" id="climate">
+    <h2>🛰️ Climate Risk Score</h2>
+    <p class="hint">Crop-specific climate risk from live 7-day forecast — drought, flood, heat & cold hazards combined into one explainable score.</p>
+    <label>City</label><input type="text" id="climCity" value="Coimbatore">
+    <label>Crop</label><select id="climCrop"></select>
+    <label>Latitude</label><input type="text" id="climLat" value="11.0168">
+    <label>Longitude</label><input type="text" id="climLon" value="76.9558">
+    <div style="display:flex;gap:8px;">
+      <button onclick="getClimateRisk()" style="flex:1;">🛰️ Analyze Climate Risk</button>
+      <button onclick="detectLocationClimate()" style="flex:0.6;background:#4caf50;color:#fff;">📍 Auto Detect</button>
+    </div>
+    <div id="climResult"></div>
+  </div>
+
+  <!-- IOT LIVE -->
+  <div class="panel" id="iot">
+    <h2>🌡️ IoT Live Sensor Data</h2>
+    <p class="hint">Real-time data from ESP32 sensors (or simulated). Click "Simulate" to generate test readings.</p>
+    <button onclick="iotSimulate()">⚡ Simulate Sensor Reading</button>
+    <button onclick="iotRefresh()">🔄 Refresh Data</button>
+    <div id="iotLatest"></div>
+    <h4 style="color:#ffe082;margin:16px 0 8px">📈 Sensor History:</h4>
+    <div class="result"><canvas id="iotChart" height="200"></canvas></div>
+    <div id="iotAlerts"></div>
+  </div>
+
+</div>
+</div>
+
+<script>
+// Auto-detect backend: use the same site when hosted online, localhost when opened locally
+const API = (location.protocol === "file:" || location.hostname === "")
+  ? "http://localhost:5000/api"
+  : location.origin + "/api";
+const CROPS = ["Rice","Wheat","Cotton","Sugarcane","Groundnut","Maize","Millets","Pulses","Vegetables","Coconut"];
+
+window.onload = () => {
+  ["waterCrop","calCrop","profitCrop","fertCrop","rotCrop","yieldCrop","rCrop","smsCrop","climCrop"].forEach(id => {
+    const sel = document.getElementById(id);
+    CROPS.forEach(c => sel.innerHTML += `<option value="${c}">${c}</option>`);
+  });
+};
+
+function show(id, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+}
+function preview(inputId, imgId) {
+  const file = document.getElementById(inputId).files[0];
+  if (file) { const img=document.getElementById(imgId); img.src=URL.createObjectURL(file); img.style.display='block'; }
+}
+function offlineMsg(el){ document.getElementById(el).innerHTML="<div class='result'>⚠️ Backend not running. Start <b>python app.py</b> first!</div>"; }
+const rupee = n => "₹" + Number(n).toLocaleString('en-IN');
+
+// 1. SOIL
+async function analyzeSoil() {
+  const file=document.getElementById('soilImg').files[0];
+  if(!file) return alert("Upload a soil photo first!");
+  const fd=new FormData(); fd.append('image',file); fd.append('season',document.getElementById('soilSeason').value);
+  try {
+    const d=await(await fetch(`${API}/soil`,{method:'POST',body:fd})).json();
+    let h=`<div class='result'><div class='card'><h4>Detected Soil: ${d.soil.name}</h4><p>Ideal pH: ${d.soil.ph}</p></div><h4 style='color:#ffe082;margin:12px 0'>Recommended Crops:</h4>`;
+    d.recommended_crops.forEach(c=>{h+=`<div class='card'><h4>🌱 ${c.crop}</h4><p>💧 ${c.water_mm}mm | ⏱️ ${c.duration_days} days</p><p>📋 ${c.method}</p></div>`;});
+    document.getElementById('soilResult').innerHTML=h+`</div>`;
+  } catch(e){ offlineMsg('soilResult'); }
+}
+// 2. WEATHER
+async function getWeather() {
+  try {
+    const d=await(await fetch(`${API}/weather?city=${document.getElementById('city').value}`)).json();
+    let h=`<div class='result'><table><tr><th>Date</th><th>Max°C</th><th>Min°C</th><th>Rain</th><th>Advice</th></tr>`;
+    d.forecast.forEach(f=>{h+=`<tr><td>${f.date}</td><td>${f.max_temp}</td><td>${f.min_temp}</td><td>${f.rainfall_mm}</td><td>${f.advice}</td></tr>`;});
+    document.getElementById('weatherResult').innerHTML=h+`</table><p class='hint'>Source: ${d.source}</p></div>`;
+  } catch(e){ offlineMsg('weatherResult'); }
+}
+// 3. WATER
+async function calcWater() {
+  try {
+    const c=waterCrop.value,a=area.value,t=temp.value,r=rain.value;
+    const d=await(await fetch(`${API}/water?crop=${c}&area=${a}&temp=${t}&rain=${r}`)).json();
+    document.getElementById('waterResult').innerHTML=`<div class='result'><div class='card'><h4>💧 ${d.crop}</h4><p>Total: <b>${d.total_water_liters.toLocaleString()} L</b></p><p>Per day: <b>${d.per_day_liters.toLocaleString()} L</b> over ${d.duration_days} days</p><p class='hint'>${d.note}</p></div></div>`;
+  } catch(e){ offlineMsg('waterResult'); }
+}
+// 4. CALENDAR
+async function getCalendar() {
+  try {
+    const d=await(await fetch(`${API}/calendar?crop=${calCrop.value}`)).json();
+    let h=`<div class='result'><h4 style='color:#ffe082'>${d.crop} — ${d.total_days} days (${d.season.months})</h4><table><tr><th>Day</th><th>Stage</th><th>Task</th></tr>`;
+    d.timeline.forEach(s=>{h+=`<tr><td>Day ${s.day}</td><td>${s.stage}</td><td>${s.task}</td></tr>`;});
+    document.getElementById('calResult').innerHTML=h+`</table></div>`;
+  } catch(e){ offlineMsg('calResult'); }
+}
+// 5. DISEASE
+async function detectDisease() {
+  const file=document.getElementById('leafImg').files[0];
+  if(!file) return alert("Upload a leaf photo first!");
+  const fd=new FormData(); fd.append('image',file);
+  try {
+    const d=await(await fetch(`${API}/disease`,{method:'POST',body:fd})).json();
+    document.getElementById('diseaseResult').innerHTML=`<div class='result'><div class='card'><h4>🔬 ${d.name}</h4><p>Severity: <b>${d.severity}</b></p><p>💊 Treatment: ${d.treatment}</p></div></div>`;
+  } catch(e){ offlineMsg('diseaseResult'); }
+}
+// 6. CHAT
+async function sendChat() {
+  const input=document.getElementById('chatInput'), msg=input.value.trim();
+  if(!msg) return;
+  const box=document.getElementById('chatBox');
+  box.innerHTML+=`<div class='msg user'>${msg}</div>`; input.value='';
+  try {
+    const d=await(await fetch(`${API}/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})})).json();
+    box.innerHTML+=`<div class='msg bot'>${d.reply}</div>`;
+  } catch(e){ box.innerHTML+=`<div class='msg bot'>⚠️ Backend not running.</div>`; }
+  box.scrollTop=box.scrollHeight;
+}
+// 6b. VOICE (browser speech recognition)
+function startVoice() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ alert("Voice not supported in this browser. Use Chrome/Edge."); return; }
+  const rec=new SR(); rec.lang='ta-IN'; rec.interimResults=false;
+  const btn=document.getElementById('micBtn');
+  btn.classList.add('listening'); btn.textContent='🎙️ Listening...';
+  rec.start();
+  rec.onresult=(e)=>{ document.getElementById('chatInput').value=e.results[0][0].transcript; sendChat(); };
+  rec.onerror=()=>{ alert("Voice error. Try again."); };
+  rec.onend=()=>{ btn.classList.remove('listening'); btn.textContent='🎤 Voice (Tamil/English)'; };
+}
+// 7. PROFIT
+async function calcProfit() {
+  try {
+    const c=profitCrop.value,a=profitArea.value,p=profitPrice.value;
+    let url=`${API}/profit?crop=${c}&area=${a}`; if(p) url+=`&price=${p}`;
+    const d=await(await fetch(url)).json();
+    document.getElementById('profitResult').innerHTML=`<div class='result'><div class='card'><h4>💰 ${d.crop} (${d.area_acres} acre)</h4>
+      <p>Yield: <b>${d.yield_kg.toLocaleString()} kg</b> @ ${rupee(d.market_price_per_kg)}/kg</p>
+      <p>Total cost: ${rupee(d.total_cost)}</p>
+      <p>Revenue: ${rupee(d.total_revenue)}</p>
+      <p class='big'>Profit: ${rupee(d.profit)}</p>
+      <p>ROI: <b>${d.roi_percent}%</b> — ${d.verdict}</p></div></div>`;
+  } catch(e){ offlineMsg('profitResult'); }
+}
+// 8. FERTILIZER
+async function getFertilizer() {
+  try {
+    const d=await(await fetch(`${API}/fertilizer?crop=${fertCrop.value}`)).json();
+    let h=`<div class='result'><div class='card'><h4>🌱 ${d.crop}</h4>
+      <p><b>Fertilizer:</b> ${d.fertilizer}</p><p><b>NPK:</b> ${d.npk_ratio}</p>
+      <p><b>Pesticide:</b> ${d.pesticide}</p></div><h4 style='color:#ffe082;margin:12px 0'>Schedule:</h4>`;
+    d.schedule.forEach(s=>{h+=`<div class='card'><h4>${s.stage}</h4><p>${s.action}</p></div>`;});
+    document.getElementById('fertResult').innerHTML=h+`<p class='hint'>${d.tip}</p></div>`;
+  } catch(e){ offlineMsg('fertResult'); }
+}
+// 9. ROTATION
+async function getRotation() {
+  try {
+    const d=await(await fetch(`${API}/rotation?crop=${rotCrop.value}`)).json();
+    document.getElementById('rotResult').innerHTML=`<div class='result'><div class='card'><h4>🔄 After ${d.current_crop}, plant:</h4>
+      <p class='big'>${d.next_crop_options.join(", ")}</p></div>
+      <div class='card'><p>💡 ${d.reason}</p><p>${d.benefit}</p><p>⚠️ ${d.avoid}</p></div></div>`;
+  } catch(e){ offlineMsg('rotResult'); }
+}
+// 10. YIELD
+async function predictYield() {
+  try {
+    const c=yieldCrop.value,a=yieldArea.value,r=yieldRain.value,s=yieldSoil.value;
+    const d=await(await fetch(`${API}/yield?crop=${c}&area=${a}&rain=${r}&soil=${s}`)).json();
+    document.getElementById('yieldResult').innerHTML=`<div class='result'><div class='card'><h4>📊 ${d.crop} (${d.area_acres} acre)</h4>
+      <p class='big'>${d.predicted_yield_kg.toLocaleString()} kg (${d.predicted_yield_tons} tons)</p>
+      <p>Rainfall: ${d.rainfall_mm}mm | Soil: ${d.soil_quality}</p>
+      <p>Confidence: ${d.confidence}</p><p class='hint'>${d.note}</p></div></div>`;
+  } catch(e){ offlineMsg('yieldResult'); }
+}
+// 11. ALERTS
+async function getAlerts() {
+  try {
+    const t=alertTemp.value,r=alertRain.value,h=alertHum.value;
+    const d=await(await fetch(`${API}/alerts?temp=${t}&rain=${r}&humidity=${h}`)).json();
+    let html=`<div class='result'><h4 style='color:#ffe082'>${d.summary}</h4>`;
+    d.alerts.forEach(a=>{html+=`<div class='card'><h4>${a.level}</h4><p>${a.msg}</p></div>`;});
+    document.getElementById('alertResult').innerHTML=html+`</div>`;
+  } catch(e){ offlineMsg('alertResult'); }
+}
+// 12. SCHEMES
+async function getSchemes() {
+  try {
+    const d=await(await fetch(`${API}/schemes?q=${document.getElementById('schemeQuery').value}`)).json();
+    let h=`<div class='result'>`;
+    d.schemes.forEach(s=>{h+=`<div class='card'><h4>${s.name}</h4><p>💵 ${s.benefit}</p><p>✅ Eligible: ${s.eligibility}</p><p>📝 How: ${s.how}</p></div>`;});
+    document.getElementById('schemeResult').innerHTML=h+`</div>`;
+  } catch(e){ offlineMsg('schemeResult'); }
+}
+// 13. ANALYTICS
+let chartObj=null;
+async function loadAnalytics() {
+  try {
+    const d=await(await fetch(`${API}/analytics`)).json();
+    const labels=d.profit_comparison.map(x=>x.crop);
+    const values=d.profit_comparison.map(x=>x.profit_per_acre);
+    if(chartObj) chartObj.destroy();
+    chartObj=new Chart(document.getElementById('profitChart'),{
+      type:'bar',
+      data:{labels,datasets:[{label:'Profit per acre (₹)',data:values,backgroundColor:'#ffca28'}]},
+      options:{plugins:{legend:{labels:{color:'#fff'}}},scales:{x:{ticks:{color:'#fff'}},y:{ticks:{color:'#fff'}}}}
+    });
+    document.getElementById('analyticsNote').innerHTML=`<div class='result'><p>🏆 Most profitable: <b>${d.best_crop}</b></p><p class='hint'>${d.note}</p></div>`;
+  } catch(e){ offlineMsg('analyticsNote'); }
+}
+
+// Water comparison chart
+let waterChartObj=null;
+async function loadWaterChart() {
+  try {
+    const d=await(await fetch(`${API}/analytics_summary`)).json();
+    const labels=d.water_comparison.map(x=>x.crop);
+    const values=d.water_comparison.map(x=>x.water_mm);
+    if(waterChartObj) waterChartObj.destroy();
+    waterChartObj=new Chart(document.getElementById('waterChart'),{
+      type:'bar',
+      data:{labels,datasets:[{label:'Water need (mm)',data:values,backgroundColor:'#4fc3f7'}]},
+      options:{plugins:{legend:{labels:{color:'#fff'}}},scales:{x:{ticks:{color:'#fff'}},y:{ticks:{color:'#fff'}}}}
+    });
+  } catch(e){ alert("Backend not running. Start the server first!"); }
+}
+
+// PDF report download
+async function downloadReport() {
+  const payload = {
+    farmer_name: document.getElementById('rFarmer').value || "-",
+    location: document.getElementById('rLocation').value || "-",
+    crop: document.getElementById('rCrop').value,
+    soil: document.getElementById('rSoil').value || "-",
+    notes: document.getElementById('rNotes').value || "",
+    water: "See Water Calc tab for details",
+    weather_summary: "Check Weather tab for 7-day forecast",
+    yield_kg: "See Yield tab",
+    profit: "See Profit tab"
+  };
+  try {
+    const res = await fetch(`${API}/report`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    if(!res.ok) throw new Error("fail");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = "agri_gram_report.pdf"; a.click();
+    URL.revokeObjectURL(url);
+    document.getElementById('reportResult').innerHTML =
+      "<div class='result'>✅ PDF downloaded! Check your Downloads folder.</div>";
+  } catch(e){ offlineMsg('reportResult'); }
+}
+
+// WhatsApp alert - free, no setup. Opens WhatsApp with the message ready.
+function sendWhatsApp() {
+  let phone = document.getElementById('smsPhone').value.trim();
+  if(!phone) return alert("Enter the farmer's WhatsApp number (10 digit)");
+  // keep digits only; add India country code 91 if a bare 10-digit number
+  phone = phone.replace(/\D/g, "");
+  if(phone.length === 10) phone = "91" + phone;
+  const crop = document.getElementById('smsCrop').value;
+  const advice = document.getElementById('smsAdvice').value;
+  const msg = `🌾 Agri Gram AI Alert: For your ${crop} crop - ${advice} Stay safe & farm smart!`;
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+  window.open(url, "_blank");
+  document.getElementById('smsResult').innerHTML =
+    `<div class='result'>✅ WhatsApp opened for +${phone}. Just press <b>Send</b> in WhatsApp!
+     <p class='hint'>Message: "${msg}"</p></div>`;
+}
+
+// Climate Risk Score (research feature)
+async function getClimateRisk() {
+  const city=document.getElementById('climCity').value;
+  const crop=document.getElementById('climCrop').value;
+  const lat=document.getElementById('climLat').value;
+  const lon=document.getElementById('climLon').value;
+  document.getElementById('climResult').innerHTML="<div class='result'>⏳ Analyzing 7-day forecast...</div>";
+  try {
+    const d=await(await fetch(`${API}/climate_risk?crop=${crop}&city=${encodeURIComponent(city)}&lat=${lat}&lon=${lon}`)).json();
+    // color for overall
+    const col = d.overall_risk>=70?'#ff5252':d.overall_risk>=40?'#ffa726':d.overall_risk>=20?'#ffee58':'#69f0ae';
+    let html=`<div class='result'>
+      <div class='card' style='border-left-color:${col}'>
+        <h4>${d.overall_label} — Overall Risk: <span style='color:${col}'>${d.overall_risk}/100</span></h4>
+        <p>Crop: <b>${d.crop}</b> | City: ${d.city} | Top hazard: <b>${d.top_hazard}</b></p>
+      </div>
+      <h4 style='color:#ffe082;margin:12px 0'>Hazard Breakdown:</h4>
+      <table><tr><th>Hazard</th><th>Score</th><th>Status</th><th>Crop Sensitivity</th><th>Contribution</th></tr>`;
+    d.breakdown.forEach(b=>{
+      html+=`<tr><td>${b.hazard}</td><td>${b.score}/100</td><td>${b.label}</td><td>${b.crop_sensitivity}</td><td>${b.contribution}</td></tr>`;
+    });
+    html+=`</table>
+      <div class='card' style='margin-top:12px'><h4>💡 Advice</h4><p>${d.advice}</p></div>
+      <div class='card'><h4>🌦️ Weather (7-day)</h4>
+        <p>Total rain: ${d.weather_stats.total_rain_mm}mm | Max day rain: ${d.weather_stats.max_day_rain_mm}mm</p>
+        <p>Avg max temp: ${d.weather_stats.avg_max_temp}°C | Min temp: ${d.weather_stats.min_temp}°C</p></div>
+      <p class='hint'>🧠 ${d.explanation}</p>
+      <p class='hint'>Source: ${d.source}</p></div>`;
+    document.getElementById('climResult').innerHTML=html;
+  } catch(e){ offlineMsg('climResult'); }
+}
+
+// IoT Live
+let iotChartObj=null;
+async function iotSimulate() {
+  try {
+    await fetch(`${API}/iot/simulate`,{method:'POST'});
+    iotRefresh();
+  } catch(e){ alert("Backend not running!"); }
+}
+async function iotRefresh() {
+  try {
+    const d=await(await fetch(`${API}/iot/history?n=20`)).json();
+    // Latest card
+    const l=d.latest;
+    if(l.message){ document.getElementById('iotLatest').innerHTML=`<div class='result'>${l.message}</div>`; return; }
+    let alertHtml='';
+    if(l.alerts&&l.alerts.length){
+      alertHtml=l.alerts.map(a=>`<div class='card' style='border-left-color:#ff5252'><p>${a}</p></div>`).join('');
+    }
+    document.getElementById('iotLatest').innerHTML=`<div class='result'>
+      <div class='card'><h4>Latest Reading (${l.timestamp})</h4>
+      <p>🌡️ Temp: <b>${l.temperature}°C</b> | 💧 Humidity: <b>${l.humidity}%</b> | 🌱 Soil Moisture: <b>${l.soil_moisture}%</b></p>
+      <p>Device: ${l.device} | Irrigation: ${l.irrigation_needed?'<b style="color:#ff5252">NEEDED</b>':'<b style="color:#69f0ae">OK</b>'}</p>
+      </div></div>`;
+    document.getElementById('iotAlerts').innerHTML=alertHtml;
+    // Chart
+    if(d.readings.length>1){
+      const labels=d.readings.map(r=>r.timestamp.split(' ')[1]);
+      const temps=d.readings.map(r=>r.temperature);
+      const moist=d.readings.map(r=>r.soil_moisture);
+      if(iotChartObj) iotChartObj.destroy();
+      iotChartObj=new Chart(document.getElementById('iotChart'),{
+        type:'line',
+        data:{labels, datasets:[
+          {label:'Temperature °C',data:temps,borderColor:'#ff7043',tension:0.3,fill:false},
+          {label:'Soil Moisture %',data:moist,borderColor:'#42a5f5',tension:0.3,fill:false}
+        ]},
+        options:{plugins:{legend:{labels:{color:'#fff'}}},
+          scales:{x:{ticks:{color:'#fff',maxTicksLimit:8}},y:{ticks:{color:'#fff'}}}}
+      });
+    }
+  } catch(e){ offlineMsg('iotLatest'); }
+}
+
+// ========= DARK/LIGHT MODE =========
+let isDark = true;
+
+// ========= GPS LOCATION AUTO-DETECT =========
+let userLat = null, userLon = null, userCity = null;
+
+function detectLocation() {
+  if (!navigator.geolocation) {
+    alert('GPS not supported in this browser!');
+    return;
+  }
+  document.getElementById('city').value = '📍 Detecting...';
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      userLat = pos.coords.latitude.toFixed(4);
+      userLon = pos.coords.longitude.toFixed(4);
+      // Reverse geocode to get city name
+      try {
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLat}&longitude=${userLon}&current_weather=true`);
+        const data = await res.json();
+        // Use nominatim for city name
+        const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${userLat}&lon=${userLon}&format=json`);
+        const geoData = await geoRes.json();
+        userCity = geoData.address?.city || geoData.address?.town || geoData.address?.village || geoData.address?.county || 'My Location';
+        document.getElementById('city').value = userCity + ' 📍';
+      } catch(e) {
+        document.getElementById('city').value = `Lat:${userLat}, Lon:${userLon} 📍`;
+      }
+    },
+    (err) => {
+      document.getElementById('city').value = 'Coimbatore';
+      alert('Location access denied. Please allow location permission.');
+    }
+  );
+}
+
+function detectLocationClimate() {
+  if (!navigator.geolocation) { alert('GPS not supported!'); return; }
+  document.getElementById('climCity').value = '📍 Detecting...';
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const lat = pos.coords.latitude.toFixed(4);
+      const lon = pos.coords.longitude.toFixed(4);
+      document.getElementById('climLat').value = lat;
+      document.getElementById('climLon').value = lon;
+      try {
+        const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
+        const geoData = await geoRes.json();
+        const city = geoData.address?.city || geoData.address?.town || geoData.address?.village || 'My Location';
+        document.getElementById('climCity').value = city + ' 📍';
+      } catch(e) { document.getElementById('climCity').value = `${lat}, ${lon} 📍`; }
+    },
+    () => { document.getElementById('climCity').value = 'Coimbatore'; alert('Location denied!'); }
+  );
+}
+
+function toggleTheme() {
+  isDark = !isDark;
+  document.body.classList.toggle('light-mode');
+  const btn = document.querySelector('.theme-btn');
+  btn.textContent = isDark ? '🌙' : '☀️';
+  btn.title = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+  // Save preference
+  localStorage.setItem('agriTheme', isDark ? 'dark' : 'light');
+}
+// Load saved theme
+if (localStorage.getItem('agriTheme') === 'light') { toggleTheme(); }
+
+// ========= LANGUAGE TRANSLATION =========
+const translations = {
+  en: {
+    title: '🌾 Agri Gram AI',
+    subtitle: 'Smart Farming Assistant · by Abinaya K',
+    tabs: ['📸 Soil→Crop','🌦️ Weather','💧 Water','📅 Calendar','🐛 Disease','🗣️ Chat','💰 Profit','🌱 Fertilizer','🔄 Rotation','📊 Yield','🔔 Alerts','📱 Schemes','📈 Analytics','📄 PDF Report','💬 WhatsApp Alert','🛰️ Climate Risk','🌡️ IoT Live']
+  },
+  ta: {
+    title: '🌾 அக்ரி கிராம் AI',
+    subtitle: 'ஸ்மார்ட் விவசாய உதவியாளர் · அபிநயா K',
+    tabs: ['📸 மண்→பயிர்','🌦️ வானிலை','💧 நீர்','📅 நாட்காட்டி','🐛 நோய்','🗣️ அரட்டை','💰 லாபம்','🌱 உரம்','🔄 சுழற்சி','📊 மகசூல்','🔔 எச்சரிக்கை','📱 திட்டங்கள்','📈 பகுப்பாய்வு','📄 PDF அறிக்கை','💬 WhatsApp','🛰️ காலநிலை ஆபத்து','🌡️ IoT நேரடி']
+  },
+  hi: {
+    title: '🌾 एग्री ग्राम AI',
+    subtitle: 'स्मार्ट खेती सहायक · अबिनया K',
+    tabs: ['📸 मिट्टी→फसल','🌦️ मौसम','💧 पानी','📅 कैलेंडर','🐛 रोग','🗣️ चैट','💰 लाभ','🌱 उर्वरक','🔄 चक्रण','📊 उपज','🔔 अलर्ट','📱 योजनाएं','📈 एनालिटिक्स','📄 PDF रिपोर्ट','💬 WhatsApp','🛰️ जलवायु जोखिम','🌡️ IoT लाइव']
+  },
+  te: {
+    title: '🌾 అగ్రి గ్రామ్ AI',
+    subtitle: 'స్మార్ట్ వ్యవసాయ సహాయకుడు · అబినయ K',
+    tabs: ['📸 నేల→పంట','🌦️ వాతావరణం','💧 నీరు','📅 క్యాలెండర్','🐛 వ్యాధి','🗣️ చాట్','💰 లాభం','🌱 ఎరువు','🔄 భ్రమణం','📊 దిగుబడి','🔔 అలర్ట్','📱 పథకాలు','📈 విశ్లేషణ','📄 PDF రిపోర్ట్','💬 WhatsApp','🛰️ వాతావరణ ప్రమాదం','🌡️ IoT లైవ్']
+  },
+  kn: {
+    title: '🌾 ಅಗ್ರಿ ಗ್ರಾಮ್ AI',
+    subtitle: 'ಸ್ಮಾರ್ಟ್ ಕೃಷಿ ಸಹಾಯಕ · ಅಬಿನಯ K',
+    tabs: ['📸 ಮಣ್ಣು→ಬೆಳೆ','🌦️ ಹವಾಮಾನ','💧 ನೀರು','📅 ಕ್ಯಾಲೆಂಡರ್','🐛 ರೋಗ','🗣️ ಚಾಟ್','💰 ಲಾಭ','🌱 ಗೊಬ್ಬರ','🔄 ತಿರುಗುವಿಕೆ','📊 ಇಳುವರಿ','🔔 ಎಚ್ಚರಿಕೆ','📱 ಯೋಜನೆ','📈 ವಿಶ್ಲೇಷಣೆ','📄 PDF ವರದಿ','💬 WhatsApp','🛰️ ಹವಾಮಾನ ಅಪಾಯ','🌡️ IoT ಲೈವ್']
+  },
+  ml: {
+    title: '🌾 അഗ്രി ഗ്രാം AI',
+    subtitle: 'സ്മാർട്ട് കൃഷി സഹായി · അബിനയ K',
+    tabs: ['📸 മണ്ണ്→വിള','🌦️ കാലാവസ്ഥ','💧 വെള്ളം','📅 കലണ്ടർ','🐛 രോഗം','🗣️ ചാറ്റ്','💰 ലാഭം','🌱 വളം','🔄 ഭ്രമണം','📊 വിളവ്','🔔 അലേർട്ട്','📱 പദ്ധതികൾ','📈 അനലിറ്റിക്സ്','📄 PDF റിപ്പോർട്ട്','💬 WhatsApp','🛰️ കാലാവസ്ഥ അപകടം','🌡️ IoT ലൈവ്']
+  }
+};
+
+let currentLang = 'en';
+
+function toggleLangMenu() {
+  document.getElementById('langDropdown').classList.toggle('show');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.classList.contains('lang-btn') && !e.target.closest('.lang-dropdown')) {
+    document.getElementById('langDropdown').classList.remove('show');
+  }
+});
+
+function setLang(lang, label) {
+  currentLang = lang;
+  // Update button text
+  document.querySelector('.lang-btn').textContent = '🇮🇳 ' + label + ' ▾';
+  // Update active state in dropdown
+  document.querySelectorAll('.lang-option').forEach(el => el.classList.remove('active'));
+  event.target.classList.add('active');
+  // Close dropdown
+  document.getElementById('langDropdown').classList.remove('show');
+  // Apply translations
+  applyTranslation(lang);
+}
+
+function applyTranslation(lang) {
+  const t = translations[lang];
+  if (!t) return;
+  // Update header
+  document.querySelector('header h1').textContent = t.title;
+  document.querySelector('header p').textContent = t.subtitle;
+  // Update tab labels
+  const tabs = document.querySelectorAll('.tabs .tab');
+  t.tabs.forEach((label, i) => {
+    if (tabs[i]) tabs[i].textContent = label;
+  });
+}
+
+</script>
+</body>
+</html>

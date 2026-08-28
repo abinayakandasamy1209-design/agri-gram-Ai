@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌾 Agri Gram AI</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif; }
+  body { background:linear-gradient(135deg,#1b5e20,#2e7d32,#43a047); color:#fff; min-height:100vh; }
+  header { text-align:center; padding:28px 16px 12px; }
+  header h1 { font-size:32px; }
+  header p { color:#c8e6c9; margin-top:4px; }
+  .tabs { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; padding:16px; }
+  .tab { background:rgba(255,255,255,0.15); padding:10px 16px; border-radius:20px;
+         cursor:pointer; font-size:14px; font-weight:600; transition:0.2s; }
+  .tab:hover, .tab.active { background:#fff; color:#1b5e20; }
+  .container { max-width:820px; margin:0 auto; padding:16px; }
+  .panel { display:none; background:rgba(255,255,255,0.1); border-radius:16px;
+           padding:24px; backdrop-filter:blur(8px); }
+  .panel.active { display:block; animation:fade 0.3s; }
+  @keyframes fade { from{opacity:0;transform:translateY(10px);} to{opacity:1;} }
+  h2 { margin-bottom:16px; }
+  input, select, button, textarea {
+    width:100%; padding:12px; margin:8px 0; border-radius:10px; border:none; font-size:15px; }
+  button { background:#ffca28; color:#1b5e20; font-weight:700; cursor:pointer; transition:0.2s; }
+  button:hover { background:#ffd54f; transform:translateY(-2px); }
+  .result { background:rgba(0,0,0,0.25); border-radius:12px; padding:16px; margin-top:16px; }
+  .card { background:rgba(255,255,255,0.12); border-radius:10px; padding:12px; margin:8px 0;
+          border-left:4px solid #ffca28; }
+  .card h4 { color:#ffe082; margin-bottom:6px; }
+  table { width:100%; border-collapse:collapse; margin-top:8px; }
+  th,td { padding:8px; text-align:left; border-bottom:1px solid rgba(255,255,255,0.2); font-size:14px; }
+  th { color:#ffe082; }
+  .chat-box { max-height:300px; overflow-y:auto; margin-bottom:12px; }
+  .msg { padding:10px 14px; border-radius:14px; margin:6px 0; max-width:80%; font-size:14px; }
+  .msg.user { background:#ffca28; color:#1b5e20; margin-left:auto; }
+  .msg.bot { background:rgba(255,255,255,0.15); }
+  .hint { font-size:12px; color:#c8e6c9; margin-top:4px; }
+  img.preview { max-width:150px; border-radius:10px; margin:8px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🌾 Agri Gram AI</h1>
+  <p>Smart Farming Assistant &middot; by Abishek K</p>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="show('soil',this)">📸 Soil → Crop</div>
+  <div class="tab" onclick="show('weather',this)">🌦️ Weather</div>
+  <div class="tab" onclick="show('water',this)">💧 Water Calc</div>
+  <div class="tab" onclick="show('calendar',this)">📅 Calendar</div>
+  <div class="tab" onclick="show('disease',this)">🐛 Disease</div>
+  <div class="tab" onclick="show('chat',this)">🗣️ AI Chat</div>
+</div>
+
+<div class="container">
+
+  <!-- SOIL -->
+  <div class="panel active" id="soil">
+    <h2>📸 Soil Photo → Crop Recommendation</h2>
+    <p class="hint">Upload a soil/land photo. AI detects soil type & suggests best crops.</p>
+    <input type="file" id="soilImg" accept="image/*" onchange="preview('soilImg','soilPrev')">
+    <img id="soilPrev" class="preview" style="display:none">
+    <select id="soilSeason">
+      <option value="kharif">Kharif (June-Oct, Monsoon)</option>
+      <option value="rabi">Rabi (Oct-March, Winter)</option>
+      <option value="zaid">Zaid (March-June, Summer)</option>
+    </select>
+    <button onclick="analyzeSoil()">🔍 Analyze Soil</button>
+    <div id="soilResult"></div>
+  </div>
+
+  <!-- WEATHER -->
+  <div class="panel" id="weather">
+    <h2>🌦️ Weather Forecast + Advice</h2>
+    <input type="text" id="city" placeholder="City (e.g. Coimbatore)" value="Coimbatore">
+    <button onclick="getWeather()">🌤️ Get 7-Day Forecast</button>
+    <div id="weatherResult"></div>
+  </div>
+
+  <!-- WATER -->
+  <div class="panel" id="water">
+    <h2>💧 Smart Water Requirement</h2>
+    <select id="waterCrop"></select>
+    <input type="number" id="area" placeholder="Area (acres)" value="1">
+    <input type="number" id="temp" placeholder="Temperature °C" value="30">
+    <input type="number" id="rain" placeholder="Rainfall mm" value="0">
+    <button onclick="calcWater()">💧 Calculate Water Need</button>
+    <div id="waterResult"></div>
+  </div>
+
+  <!-- CALENDAR -->
+  <div class="panel" id="calendar">
+    <h2>📅 Crop Calendar / Timeline</h2>
+    <select id="calCrop"></select>
+    <button onclick="getCalendar()">📅 Show Timeline</button>
+    <div id="calResult"></div>
+  </div>
+
+  <!-- DISEASE -->
+  <div class="panel" id="disease">
+    <h2>🐛 Plant Disease Detection</h2>
+    <p class="hint">Upload a leaf photo. AI checks plant health & suggests treatment.</p>
+    <input type="file" id="leafImg" accept="image/*" onchange="preview('leafImg','leafPrev')">
+    <img id="leafPrev" class="preview" style="display:none">
+    <button onclick="detectDisease()">🔬 Detect Disease</button>
+    <div id="diseaseResult"></div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="panel" id="chat">
+    <h2>🗣️ Tamil AI Chat Assistant</h2>
+    <div class="chat-box" id="chatBox">
+      <div class="msg bot">வணக்கம்! 🌾 நான் Agri Gram AI. தண்ணீர், உரம், பூச்சி, பருவம் பற்றி கேளுங்கள்.</div>
+    </div>
+    <input type="text" id="chatInput" placeholder="கேள்வி கேளுங்கள்... (Ask a question)" onkeypress="if(event.key==='Enter')sendChat()">
+    <button onclick="sendChat()">📩 Send</button>
+  </div>
+
+</div>
+
+<script>
+const API = "http://localhost:5000";
+const CROPS = ["Rice","Wheat","Cotton","Sugarcane","Groundnut","Maize","Millets","Pulses","Vegetables","Coconut"];
+
+// Populate crop dropdowns
+window.onload = () => {
+  ["waterCrop","calCrop"].forEach(id => {
+    const sel = document.getElementById(id);
+    CROPS.forEach(c => sel.innerHTML += `<option value="${c}">${c}</option>`);
+  });
+};
+
+function show(id, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+}
+
+function preview(inputId, imgId) {
+  const file = document.getElementById(inputId).files[0];
+  if (file) {
+    const img = document.getElementById(imgId);
+    img.src = URL.createObjectURL(file);
+    img.style.display = 'block';
+  }
+}
+
+function offlineMsg(el) {
+  document.getElementById(el).innerHTML =
+    "<div class='result'>⚠️ Backend not running. Start <b>python app.py</b> first!</div>";
+}
+
+// 1. SOIL
+async function analyzeSoil() {
+  const file = document.getElementById('soilImg').files[0];
+  if (!file) return alert("Upload a soil photo first!");
+  const fd = new FormData();
+  fd.append('image', file);
+  fd.append('season', document.getElementById('soilSeason').value);
+  try {
+    const res = await fetch(`${API}/api/soil`, {method:'POST', body:fd});
+    const d = await res.json();
+    let html = `<div class='result'><div class='card'><h4>Detected Soil: ${d.soil.name}</h4>
+      <p>Ideal pH: ${d.soil.ph}</p></div><h4 style='color:#ffe082;margin:12px 0'>Recommended Crops:</h4>`;
+    d.recommended_crops.forEach(c => {
+      html += `<div class='card'><h4>🌱 ${c.crop}</h4>
+        <p>💧 Water: ${c.water_mm}mm | ⏱️ Duration: ${c.duration_days} days</p>
+        <p>📋 ${c.method}</p></div>`;
+    });
+    html += `</div>`;
+    document.getElementById('soilResult').innerHTML = html;
+  } catch(e){ offlineMsg('soilResult'); }
+}
+
+// 2. WEATHER
+async function getWeather() {
+  try {
+    const city = document.getElementById('city').value;
+    const res = await fetch(`${API}/api/weather?city=${city}`);
+    const d = await res.json();
+    let html = `<div class='result'><table><tr><th>Date</th><th>Max°C</th><th>Min°C</th><th>Rain mm</th><th>Advice</th></tr>`;
+    d.forecast.forEach(f => {
+      html += `<tr><td>${f.date}</td><td>${f.max_temp}</td><td>${f.min_temp}</td><td>${f.rainfall_mm}</td><td>${f.advice}</td></tr>`;
+    });
+    html += `</table><p class='hint'>Source: ${d.source}</p></div>`;
+    document.getElementById('weatherResult').innerHTML = html;
+  } catch(e){ offlineMsg('weatherResult'); }
+}
+
+// 3. WATER
+async function calcWater() {
+  try {
+    const c = document.getElementById('waterCrop').value;
+    const a = document.getElementById('area').value;
+    const t = document.getElementById('temp').value;
+    const r = document.getElementById('rain').value;
+    const res = await fetch(`${API}/api/water?crop=${c}&area=${a}&temp=${t}&rain=${r}`);
+    const d = await res.json();
+    document.getElementById('waterResult').innerHTML =
+      `<div class='result'><div class='card'><h4>💧 ${d.crop}</h4>
+      <p>Total water: <b>${d.total_water_liters.toLocaleString()} L</b></p>
+      <p>Per day: <b>${d.per_day_liters.toLocaleString()} L</b> over ${d.duration_days} days</p>
+      <p class='hint'>${d.note}</p></div></div>`;
+  } catch(e){ offlineMsg('waterResult'); }
+}
+
+// 4. CALENDAR
+async function getCalendar() {
+  try {
+    const c = document.getElementById('calCrop').value;
+    const res = await fetch(`${API}/api/calendar?crop=${c}`);
+    const d = await res.json();
+    let html = `<div class='result'><h4 style='color:#ffe082'>${d.crop} — ${d.total_days} days (${d.season.months})</h4>
+      <table><tr><th>Day</th><th>Stage</th><th>Task</th></tr>`;
+    d.timeline.forEach(s => {
+      html += `<tr><td>Day ${s.day}</td><td>${s.stage}</td><td>${s.task}</td></tr>`;
+    });
+    html += `</table></div>`;
+    document.getElementById('calResult').innerHTML = html;
+  } catch(e){ offlineMsg('calResult'); }
+}
+
+// 5. DISEASE
+async function detectDisease() {
+  const file = document.getElementById('leafImg').files[0];
+  if (!file) return alert("Upload a leaf photo first!");
+  const fd = new FormData();
+  fd.append('image', file);
+  try {
+    const res = await fetch(`${API}/api/disease`, {method:'POST', body:fd});
+    const d = await res.json();
+    document.getElementById('diseaseResult').innerHTML =
+      `<div class='result'><div class='card'><h4>🔬 ${d.name}</h4>
+      <p>Severity: <b>${d.severity}</b></p>
+      <p>💊 Treatment: ${d.treatment}</p></div></div>`;
+  } catch(e){ offlineMsg('diseaseResult'); }
+}
+
+// 6. CHAT
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  const box = document.getElementById('chatBox');
+  box.innerHTML += `<div class='msg user'>${msg}</div>`;
+  input.value = '';
+  try {
+    const res = await fetch(`${API}/api/chat`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({message: msg})
+    });
+    const d = await res.json();
+    box.innerHTML += `<div class='msg bot'>${d.reply}</div>`;
+  } catch(e){
+    box.innerHTML += `<div class='msg bot'>⚠️ Backend not running.</div>`;
+  }
+  box.scrollTop = box.scrollHeight;
+}
+</script>
+</body>
+</html>
