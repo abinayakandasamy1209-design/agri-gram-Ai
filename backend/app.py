@@ -12,7 +12,7 @@ import agri_features
 import agri_extra2
 import climate_risk
 import iot_module
-import supabase_db as database
+import db as database   # smart router: Supabase online, SQLite fallback
 
 # Serve the frontend. Works whether index.html sits next to app.py (flat)
 # or in a ../frontend folder (structured layout).

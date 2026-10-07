@@ -18,19 +18,30 @@ HEADERS = {
     "Prefer": "return=representation"
 }
 
+# Max seconds to wait for Supabase. If the project is paused/asleep this
+# ensures we FAIL FAST and fall back to SQLite instead of hanging the
+# server (which caused the "Server not running!" error).
+TIMEOUT = 8
+
 
 def _get(table, params=""):
     """GET request to Supabase REST API"""
     url = f"{SUPABASE_URL}/rest/v1/{table}?{params}"
-    res = requests.get(url, headers=HEADERS)
-    return res.json() if res.status_code == 200 else []
+    try:
+        res = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
+        return res.json() if res.status_code == 200 else []
+    except Exception:
+        return []
 
 
 def _post(table, data):
     """POST (INSERT) to Supabase REST API"""
     url = f"{SUPABASE_URL}/rest/v1/{table}"
-    res = requests.post(url, headers=HEADERS, json=data)
-    return res.json() if res.status_code in [200, 201] else {"error": res.text}
+    try:
+        res = requests.post(url, headers=HEADERS, json=data, timeout=TIMEOUT)
+        return res.json() if res.status_code in [200, 201] else {"error": res.text}
+    except Exception as e:
+        return {"error": str(e)}
 
 
 # ========== USER FUNCTIONS ==========
@@ -38,8 +49,11 @@ def _post(table, data):
 def login_user(username, password):
     """Validate user login from Supabase"""
     url = f"{SUPABASE_URL}/rest/v1/users?username=eq.{username}&password=eq.{password}"
-    res = requests.get(url, headers=HEADERS)
-    users = res.json() if res.status_code == 200 else []
+    try:
+        res = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
+        users = res.json() if res.status_code == 200 else []
+    except Exception:
+        users = []
     if users and len(users) > 0:
         user = users[0]
         return {"success": True, "user_id": user["id"], "username": user["username"],
