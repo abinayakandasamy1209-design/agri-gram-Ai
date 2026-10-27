@@ -4,12 +4,13 @@ Connects to Supabase PostgreSQL for permanent online storage.
 Author: Abinaya K
 """
 
+import os
 import requests
 from datetime import datetime
 
-# Supabase Configuration
-SUPABASE_URL = "https://ivhkkqmbidifnqpobslo.supabase.co"
-SUPABASE_KEY = "sb_publishable_D069g9-DiJXGqm5Q6Y7VgQ_292tnx7W"
+# Supabase Configuration (supports environment variables or defaults to project ivhkkqmbidifnqpobslo)
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://ivhkkqmbidifnqpobslo.supabase.co").rstrip("/")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "sb_publishable_D069g9-DiJXGqm5Q6Y7VgQ_292tnx7W")
 
 HEADERS = {
     "apikey": SUPABASE_KEY,
@@ -18,9 +19,7 @@ HEADERS = {
     "Prefer": "return=representation"
 }
 
-# Max seconds to wait for Supabase. If the project is paused/asleep this
-# ensures we FAIL FAST and fall back to SQLite instead of hanging the
-# server (which caused the "Server not running!" error).
+# Max seconds to wait for Supabase
 TIMEOUT = 3
 
 
@@ -47,8 +46,12 @@ def _post(table, data):
 # ========== USER FUNCTIONS ==========
 
 def login_user(username, password):
-    """Validate user login from Supabase"""
-    url = f"{SUPABASE_URL}/rest/v1/users?username=eq.{username}&password=eq.{password}"
+    """Validate user login from Supabase (case-insensitive username)"""
+    if not username or not password:
+        return {"success": False, "error": "Username and password required"}
+    u = str(username).strip()
+    p = str(password).strip()
+    url = f"{SUPABASE_URL}/rest/v1/users?username=ilike.{u}&password=eq.{p}"
     try:
         res = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
         users = res.json() if res.status_code == 200 else []
@@ -56,29 +59,43 @@ def login_user(username, password):
         users = []
     if users and len(users) > 0:
         user = users[0]
-        return {"success": True, "user_id": user["id"], "username": user["username"],
-                "name": user["name"], "role": user.get("role", "user"), "location": user.get("location", "")}
-    return {"success": False, "error": "Invalid username or password"}
+        return {
+            "success": True,
+            "user_id": user["id"],
+            "username": user["username"],
+            "name": user.get("name") or user["username"],
+            "role": user.get("role", "user"),
+            "location": user.get("location", "Coimbatore"),
+            "database": "Supabase"
+        }
+    return {"success": False, "error": f"No account found with username '{u}' in Supabase, or password incorrect."}
 
 
 def register_user(username, password, name, location="Coimbatore"):
-    """Register new user in Supabase"""
+    """Register new user in Supabase with case-insensitive check"""
+    if not username or not password:
+        return {"success": False, "error": "Username and password required"}
+    u = str(username).strip()
+    p = str(password).strip()
+    n = str(name).strip() if name else u
+    loc = str(location).strip() if location else "Coimbatore"
+
     # Check if username exists
-    existing = _get("users", f"username=eq.{username}")
+    existing = _get("users", f"username=ilike.{u}")
     if existing and len(existing) > 0:
-        return {"success": False, "error": "Username already exists"}
-    
+        return {"success": False, "error": f"Username '{u}' already exists"}
+
     data = {
-        "username": username,
-        "password": password,
-        "name": name,
+        "username": u,
+        "password": p,
+        "name": n,
         "role": "user",
-        "location": location
+        "location": loc
     }
     result = _post("users", data)
-    if "error" in result:
+    if isinstance(result, dict) and "error" in result:
         return {"success": False, "error": str(result["error"])}
-    return {"success": True, "message": "Registration successful"}
+    return {"success": True, "message": "Registration successful in Supabase"}
 
 
 # ========== IoT DATA FUNCTIONS ==========

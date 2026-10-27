@@ -372,17 +372,27 @@
 </div>
 
 <script>
-// Smart API host resolution:
-// Connects to local Flask server if opened via file:// or Live Server port,
-// otherwise uses the current origin in production/Render deployment.
-const API = (function() {
-  if (window.location.protocol === 'file:' || !window.location.origin || window.location.origin === 'null' || window.location.port === '5500' || window.location.port === '3000') {
-    return 'http://127.0.0.1:5000/api';
+// Smart Multi-tier Backend Connectivity
+const LOCAL_API = 'http://127.0.0.1:5000/api';
+const CLOUD_API = 'https://agri-gram-ai.onrender.com/api';
+
+// Initial API Selection
+let API = (function() {
+  if (window.location.protocol === 'https:' || (window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1')) {
+    return window.location.origin + '/api';
   }
-  return window.location.origin + '/api';
+  return LOCAL_API;
 })();
 
 let isServerOnline = false;
+
+// Pre-seeded demo user directory for instant offline demo access
+const OFFLINE_DEMO_USERS = {
+  'abinaya': { username: 'abinaya', password: 'abinaya123', name: 'Abinaya K', role: 'user', location: 'Coimbatore', user_id: 3 },
+  'farmer':  { username: 'farmer', password: 'farmer123', name: 'Farmer User', role: 'user', location: 'Coimbatore', user_id: 1 },
+  'admin':   { username: 'admin', password: 'admin123', name: 'Admin', role: 'admin', location: 'Tamil Nadu', user_id: 2 },
+  'dhanusha':{ username: 'dhanusha', password: 'dhanusha123', name: 'Dhanusha', role: 'user', location: 'Coimbatore', user_id: 4 }
+};
 
 // If already logged in, redirect to dashboard
 if (localStorage.getItem('agri_user')) {
@@ -390,44 +400,64 @@ if (localStorage.getItem('agri_user')) {
 }
 
 // -------------------------------------------------------------
-// Check Server Connectivity
+// Check Server Connectivity (Local -> Cloud Fallback)
 // -------------------------------------------------------------
 async function checkServerHealth(manual = false) {
   const badge = document.getElementById('serverBadge');
   const badgeText = document.getElementById('serverBadgeText');
-  if (manual) badgeText.textContent = 'Checking...';
+  if (manual) badgeText.textContent = 'Checking connectivity...';
 
+  // 1. Try current API first
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const timeoutId = setTimeout(() => controller.abort(), 2500);
     const res = await fetch(API + '/health', { signal: controller.signal });
     clearTimeout(timeoutId);
-
     if (res.ok) {
       isServerOnline = true;
+      const data = await res.json().catch(() => ({}));
+      const dbType = data.database === 'supabase_postgresql' ? 'Supabase' : 'SQLite';
       badge.className = 'server-badge online';
-      badgeText.textContent = '🟢 Server Online (Ready)';
-      badge.title = 'Agri Gram AI backend is connected and ready';
-    } else {
-      throw new Error('Non-200 response');
+      badge.style.background = '';
+      badge.style.borderColor = '';
+      badge.style.color = '';
+      badgeText.textContent = API.includes('127.0.0.1') 
+        ? `🟢 Local Server Online (${dbType})` 
+        : `🟢 Cloud Server Online (${dbType})`;
+      badge.title = `Connected to ${API} with ${dbType} database`;
+      return;
     }
-  } catch(e) {
-    // Try fallback check on /api
+  } catch(e) {}
+
+  // 2. If local failed and we are not already on CLOUD_API, try Cloud Render endpoint
+  if (API !== CLOUD_API) {
     try {
-      const res2 = await fetch(API, { signal: AbortSignal.timeout(2000) });
-      if (res2.ok) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+      const res = await fetch(CLOUD_API + '/health', { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        API = CLOUD_API;
         isServerOnline = true;
         badge.className = 'server-badge online';
-        badgeText.textContent = '🟢 Server Online';
+        badge.style.background = '';
+        badge.style.borderColor = '';
+        badge.style.color = '';
+        badgeText.textContent = '🟢 Cloud Server Online (Render)';
+        badge.title = 'Connected to live cloud backend on Render';
         return;
       }
     } catch(err) {}
-
-    isServerOnline = false;
-    badge.className = 'server-badge offline';
-    badgeText.textContent = '🔴 Server Offline (Click to retry)';
-    badge.title = 'Server not running at ' + API + '. Start python app.py first';
   }
+
+  // 3. Fallback: Standalone Offline Ready Mode
+  isServerOnline = false;
+  badge.className = 'server-badge online';
+  badge.style.background = '#fef3c7';
+  badge.style.borderColor = '#f59e0b';
+  badge.style.color = '#92400e';
+  badgeText.textContent = '🟡 Offline Ready (Demo Mode)';
+  badge.title = 'Click Quick Login below to enter with offline demo data, or start "python app.py" for local server';
 }
 
 // -------------------------------------------------------------
@@ -474,7 +504,7 @@ function quickFill(user, pass) {
 }
 
 // -------------------------------------------------------------
-// Login Action
+// Login Action (With Cloud Fallback + Offline Demo Support)
 // -------------------------------------------------------------
 async function doLogin() {
   const username = document.getElementById('loginUser').value.trim();
@@ -493,9 +523,13 @@ async function doLogin() {
   btn.disabled = true;
   btnText.textContent = 'Logging in...';
 
+  let loggedIn = false;
+  let responseData = null;
+
+  // 1. Try active API
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
 
     const res = await fetch(API + '/login', {
       method: 'POST',
@@ -505,18 +539,44 @@ async function doLogin() {
     });
     clearTimeout(timeoutId);
 
-    const data = await res.json();
+    if (res.ok) {
+      responseData = await res.json();
+      loggedIn = true;
+    }
+  } catch(e) {
+    // 2. If active API was local and failed, try Cloud API fallback
+    if (API !== CLOUD_API) {
+      try {
+        const controller2 = new AbortController();
+        const timeoutId2 = setTimeout(() => controller2.abort(), 4000);
 
-    if (data.success) {
-      // 1. Save active session
-      localStorage.setItem('agri_user', JSON.stringify(data));
+        const res2 = await fetch(CLOUD_API + '/login', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({username, password}),
+          signal: controller2.signal
+        });
+        clearTimeout(timeoutId2);
 
-      // 2. Handle Remember Me / Save Login Info
+        if (res2.ok) {
+          responseData = await res2.json();
+          API = CLOUD_API;
+          loggedIn = true;
+        }
+      } catch(err2) {}
+    }
+  }
+
+  // 3. If online network request succeeded
+  if (loggedIn && responseData) {
+    if (responseData.success) {
+      localStorage.setItem('agri_user', JSON.stringify(responseData));
+
       if (remember) {
         localStorage.setItem('agri_saved_login', JSON.stringify({
-          username: data.username || username,
+          username: responseData.username || username,
           password: password,
-          name: data.name || username
+          name: responseData.name || username
         }));
       } else {
         localStorage.removeItem('agri_saved_login');
@@ -526,19 +586,69 @@ async function doLogin() {
       setTimeout(() => {
         window.location.href = 'dashboard.html';
       }, 500);
+      return;
     } else {
       btn.disabled = false;
       btnText.textContent = 'Login';
-      showError('loginError', data.error || 'Invalid username or password!');
+      showError('loginError', responseData.error || 'Invalid username or password!');
+      return;
     }
-  } catch(e) {
-    btn.disabled = false;
-    btnText.textContent = 'Login';
-    showError('loginError',
-      '⚠️ Server not running! Please start the backend by running:<br><b>python app.py</b><br>in your terminal, then try again.'
-    );
-    checkServerHealth();
   }
+
+  // 4. Offline Demo & Saved Account Fallback:
+  // Allows testing when server is completely offline
+  const lowerUser = username.toLowerCase();
+  const demoAccount = OFFLINE_DEMO_USERS[lowerUser];
+  
+  let savedAccount = null;
+  try {
+    const rawSaved = localStorage.getItem('agri_saved_login');
+    if (rawSaved) savedAccount = JSON.parse(rawSaved);
+  } catch(e) {}
+
+  if (demoAccount && demoAccount.password === password) {
+    const userData = {
+      success: true,
+      user_id: demoAccount.user_id,
+      username: demoAccount.username,
+      name: demoAccount.name,
+      role: demoAccount.role,
+      location: demoAccount.location,
+      offline: true
+    };
+    localStorage.setItem('agri_user', JSON.stringify(userData));
+    if (remember) {
+      localStorage.setItem('agri_saved_login', JSON.stringify({
+        username: demoAccount.username,
+        password: password,
+        name: demoAccount.name
+      }));
+    }
+    showSuccess('loginError', `✅ Welcome ${demoAccount.name}! (Offline Demo Mode)`);
+    setTimeout(() => { window.location.href = 'dashboard.html'; }, 500);
+    return;
+  } else if (savedAccount && savedAccount.username && savedAccount.username.toLowerCase() === lowerUser && savedAccount.password === password) {
+    const userData = {
+      success: true,
+      user_id: 1,
+      username: savedAccount.username,
+      name: savedAccount.name || savedAccount.username,
+      role: 'user',
+      location: 'Coimbatore',
+      offline: true
+    };
+    localStorage.setItem('agri_user', JSON.stringify(userData));
+    showSuccess('loginError', '✅ Login successful! Redirecting...');
+    setTimeout(() => { window.location.href = 'dashboard.html'; }, 500);
+    return;
+  }
+
+  btn.disabled = false;
+  btnText.textContent = 'Login';
+  showError('loginError',
+    '⚠️ Server not running! Please start the backend by running:<br><b>python app.py</b><br>or click <b>🌾 Abinaya</b> above to use Quick Demo Login.'
+  );
+  checkServerHealth();
 }
 
 // -------------------------------------------------------------
@@ -563,45 +673,79 @@ async function doRegister() {
   btn.disabled = true;
   btnText.textContent = 'Creating account...';
 
+  let regSuccess = false;
+  let regData = null;
+
   try {
     const res = await fetch(API + '/register', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({username, password, name, location})
     });
-    const data = await res.json();
-
-    if (data.success) {
-      // Always save credentials for instant relogin
-      if (remember) {
-        localStorage.setItem('agri_saved_login', JSON.stringify({
-          username, password, name: name || username
-        }));
-      }
-
-      showSuccess('regError', '✅ Registration successful! Saved for instant login.');
-
-      // Pre-fill login inputs
-      document.getElementById('loginUser').value = username;
-      document.getElementById('loginPass').value = password;
-      document.getElementById('rememberMe').checked = true;
-
-      setTimeout(() => {
-        showLogin();
-        showSuccess('loginError', `✅ Welcome ${name || username}! Account saved. Click Login to enter.`);
-        btn.disabled = false;
-        btnText.textContent = 'Create Account';
-      }, 1200);
-    } else {
-      btn.disabled = false;
-      btnText.textContent = 'Create Account';
-      showError('regError', data.error || 'Registration failed!');
+    if (res.ok) {
+      regData = await res.json();
+      regSuccess = regData.success;
     }
   } catch(e) {
-    btn.disabled = false;
-    btnText.textContent = 'Create Account';
-    showError('regError', '⚠️ Server not running! Start "python app.py" first.');
+    // Try Cloud API
+    if (API !== CLOUD_API) {
+      try {
+        const res2 = await fetch(CLOUD_API + '/register', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({username, password, name, location})
+        });
+        if (res2.ok) {
+          regData = await res2.json();
+          regSuccess = regData.success;
+          API = CLOUD_API;
+        }
+      } catch(err2) {}
+    }
   }
+
+  if (regSuccess) {
+    if (remember) {
+      localStorage.setItem('agri_saved_login', JSON.stringify({
+        username, password, name: name || username
+      }));
+    }
+    showSuccess('regError', '✅ Registration successful! Saved for instant login.');
+    document.getElementById('loginUser').value = username;
+    document.getElementById('loginPass').value = password;
+    document.getElementById('rememberMe').checked = true;
+
+    setTimeout(() => {
+      showLogin();
+      showSuccess('loginError', `✅ Welcome ${name || username}! Account saved. Click Login to enter.`);
+      btn.disabled = false;
+      btnText.textContent = 'Create Account';
+    }, 1200);
+    return;
+  }
+
+  // If offline registration fallback
+  if (!regData) {
+    // Save to local storage directly so user can log in immediately
+    localStorage.setItem('agri_saved_login', JSON.stringify({
+      username, password, name: name || username
+    }));
+    showSuccess('regError', '✅ Account created in local storage! Switching to login...');
+    document.getElementById('loginUser').value = username;
+    document.getElementById('loginPass').value = password;
+    document.getElementById('rememberMe').checked = true;
+    setTimeout(() => {
+      showLogin();
+      showSuccess('loginError', `✅ Welcome ${name || username}! Click Login to enter.`);
+      btn.disabled = false;
+      btnText.textContent = 'Create Account';
+    }, 1200);
+    return;
+  }
+
+  btn.disabled = false;
+  btnText.textContent = 'Create Account';
+  showError('regError', (regData && regData.error) || 'Registration failed!');
 }
 
 function showRegister() {

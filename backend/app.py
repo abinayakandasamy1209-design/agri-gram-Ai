@@ -32,11 +32,21 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @app.route("/api/health", methods=["GET"])
 def health():
+    is_online = False
+    if hasattr(database, "_online"):
+        try:
+            is_online = bool(database._online())
+        except Exception:
+            is_online = False
+    elif getattr(database, "SUPABASE_OK", False):
+        is_online = True
+
     return jsonify({
         "status": "healthy",
         "app": "Agri Gram AI",
         "version": "1.0.0",
-        "database": "online" if getattr(database, "SUPABASE_OK", False) else "local_sqlite"
+        "database": "supabase_postgresql" if is_online else "local_sqlite",
+        "supabase_project": "ivhkkqmbidifnqpobslo"
     })
 
 
@@ -270,7 +280,7 @@ def iot_simulate():
 
 @app.route("/api/login", methods=["POST"])
 def login():
-    data = request.json
+    data = request.get_json(silent=True) or request.form.to_dict() or {}
     username = data.get("username", "")
     password = data.get("password", "")
     result = database.login_user(username, password)
@@ -279,7 +289,7 @@ def login():
 
 @app.route("/api/register", methods=["POST"])
 def register():
-    data = request.json
+    data = request.get_json(silent=True) or request.form.to_dict() or {}
     result = database.register_user(
         data.get("username"), data.get("password"),
         data.get("name", ""), data.get("location", "Coimbatore")
@@ -289,7 +299,7 @@ def register():
 
 @app.route("/api/db/iot/save", methods=["POST"])
 def db_iot_save():
-    data = request.json
+    data = request.get_json(silent=True) or request.form.to_dict() or {}
     result = database.save_iot_data(
         data.get("temperature", 0), data.get("humidity", 0),
         data.get("soil_moisture", 0), data.get("device_id", "ESP32_01")
@@ -305,7 +315,7 @@ def db_iot_history():
 
 @app.route("/api/db/crop/save", methods=["POST"])
 def db_crop_save():
-    data = request.json
+    data = request.get_json(silent=True) or request.form.to_dict() or {}
     result = database.save_crop_history(
         data.get("user_id", 1), data.get("crop"), data.get("season"),
         data.get("area", 1), data.get("risk_score", 0), data.get("profit", 0)

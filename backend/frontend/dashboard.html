@@ -689,10 +689,20 @@ function logout() { localStorage.removeItem('agri_user'); window.location.href =
 
 <script>
 
-// Auto-detect backend: use the same site when hosted online, localhost when opened locally
-const API = (location.protocol === "file:" || location.hostname === "" || location.port === "5500" || location.port === "3000")
-  ? "http://127.0.0.1:5000/api"
-  : location.origin + "/api";
+// Auto-detect backend: use cloud Render backend if opened locally or when localhost is offline
+const CLOUD_API = "https://agri-gram-ai.onrender.com/api";
+let API = (location.protocol === "https:" || (location.protocol === "http:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1"))
+  ? location.origin + "/api"
+  : "http://127.0.0.1:5000/api";
+
+// Auto test if local server is unreachable and switch to CLOUD_API
+if (API.includes("127.0.0.1")) {
+  fetch(API + "/health", { signal: AbortSignal.timeout(1500) })
+    .catch(() => {
+      API = CLOUD_API;
+      console.log("Local backend offline. Switched to Cloud Render API:", API);
+    });
+}
 const CROPS = ["Rice","Wheat","Cotton","Sugarcane","Groundnut","Maize","Millets","Pulses","Vegetables","Coconut"];
 
 window.onload = () => {

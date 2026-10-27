@@ -10,56 +10,87 @@ Supabase project goes to sleep after inactivity.
 Author: Abinaya K
 """
 
-import database as local_db   # SQLite - always available locally
+import time
+import database as local_db   # SQLite fallback
 
-# --- Try to load Supabase and check if it is actually reachable ---
+# --- Supabase Module Loading ---
 online_db = None
-SUPABASE_OK = False
 try:
     import supabase_db as _sup
     online_db = _sup
-    SUPABASE_OK = bool(_sup.test_connection())
-except Exception as e:
-    SUPABASE_OK = False
+except Exception:
+    online_db = None
 
-if SUPABASE_OK:
-    print("  [DB] Database mode: ONLINE (Supabase) with SQLite fallback")
-else:
-    print("  [DB] Database mode: LOCAL (SQLite) - agri_gram.db ready")
-
+_last_check = 0
+_cached_online = False
 
 def _online():
-    return SUPABASE_OK and online_db is not None
+    """Dynamically checks if Supabase is reachable (caches for 30s)"""
+    global _last_check, _cached_online
+    now = time.time()
+    if now - _last_check < 30:
+        return _cached_online
+    _last_check = now
+    if online_db is not None:
+        try:
+            _cached_online = bool(online_db.test_connection())
+        except Exception:
+            _cached_online = False
+    return _cached_online
 
 
-# ========== USER FUNCTIONS ==========
+# Compatibility flag
+SUPABASE_OK = _cached_online
+
+def init_db():
+    """Initialize local SQLite DB so tables and seeded accounts are guaranteed ready"""
+    try:
+        local_db.init_db()
+    except Exception as e:
+        print(f"  [DB] local_db init notice: {e}")
+
+# Initial check
+if _online():
+    SUPABASE_OK = True
+    print("  [DB] Primary Database: ONLINE (Supabase PostgreSQL)")
+else:
+    SUPABASE_OK = False
+    print("  [DB] Primary Database: LOCAL (SQLite fallback) - will auto-reconnect when Supabase wakes")
+
+
+
+# ========== USER FUNCTIONS (Supabase Primary) ==========
 
 def login_user(username, password):
+    """Try Supabase primary first; fallback to local SQLite"""
     if _online():
         try:
             res = online_db.login_user(username, password)
             if res and res.get("success"):
                 return res
-        except Exception as e:
+        except Exception:
             pass
-    # Fallback (also serves the seeded demo users: admin / farmer / abinaya ...)
+    # Fallback (also serves seeded demo users: abinaya / farmer / admin)
     return local_db.login_user(username, password)
 
 
 def register_user(username, password, name, location="Coimbatore"):
-    # Always register in local DB first to guarantee persistence
-    local_res = local_db.register_user(username, password, name, location)
-    
-    # Mirror to Supabase if online
+    """Try Supabase primary first; mirror to local SQLite"""
     if _online():
         try:
             online_res = online_db.register_user(username, password, name, location)
+            # Mirror into local DB so offline access also works
+            try:
+                local_db.register_user(username, password, name, location)
+            except Exception:
+                pass
             if online_res and online_res.get("success"):
                 return online_res
         except Exception:
             pass
             
-    return local_res
+    # Local registration if Supabase is offline
+    return local_db.register_user(username, password, name, location)
 
 
 
