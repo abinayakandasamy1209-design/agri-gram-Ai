@@ -120,33 +120,88 @@ def init_db():
 # ========== USER FUNCTIONS ==========
 
 def login_user(username, password):
-    """Validate user login"""
+    """Validate user login with case-insensitive username match and clear messages"""
+    if not username or not password:
+        return {"success": False, "error": "Username and password are required"}
+
+    u_clean = str(username).strip()
+    p_clean = str(password).strip()
+
     conn = get_connection()
+    # First check if user exists at all
     user = conn.execute(
-        "SELECT id, username, name, role, location FROM users WHERE username=? AND password=?",
-        (username, password)
+        "SELECT id, username, password, name, role, location FROM users WHERE LOWER(TRIM(username))=LOWER(?)",
+        (u_clean,)
     ).fetchone()
+
+    if not user:
+        conn.close()
+        return {
+            "success": False,
+            "error": f"No account found for '{u_clean}'. Please check username or register below."
+        }
+
+    if user["password"].strip() != p_clean:
+        conn.close()
+        return {
+            "success": False,
+            "error": "Incorrect password. Please check your password and try again."
+        }
+
     conn.close()
-    if user:
-        return {"success": True, "user_id": user["id"], "username": user["username"],
-                "name": user["name"], "role": user["role"], "location": user["location"]}
-    return {"success": False, "error": "Invalid username or password"}
+    return {
+        "success": True,
+        "user_id": user["id"],
+        "username": user["username"],
+        "name": user["name"] or user["username"],
+        "role": user["role"] or "user",
+        "location": user["location"] or "Coimbatore"
+    }
 
 
 def register_user(username, password, name, location="Coimbatore"):
-    """Register new user"""
+    """Register new user with case-insensitive uniqueness check"""
+    if not username or not password:
+        return {"success": False, "error": "Username and password are required"}
+
+    u_clean = str(username).strip()
+    p_clean = str(password).strip()
+    n_clean = str(name).strip() if name else u_clean
+    loc_clean = str(location).strip() if location else "Coimbatore"
+
     conn = get_connection()
+    existing = conn.execute(
+        "SELECT id FROM users WHERE LOWER(TRIM(username))=LOWER(?)",
+        (u_clean,)
+    ).fetchone()
+
+    if existing:
+        conn.close()
+        return {"success": False, "error": f"Username '{u_clean}' already exists. Please choose another."}
+
     try:
-        conn.execute(
-            "INSERT INTO users (username, password, name, location) VALUES (?, ?, ?, ?)",
-            (username, password, name, location)
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO users (username, password, name, location, role) VALUES (?, ?, ?, ?, 'user')",
+            (u_clean, p_clean, n_clean, loc_clean)
         )
+        new_id = cur.lastrowid
         conn.commit()
         conn.close()
-        return {"success": True, "message": "Registration successful"}
-    except sqlite3.IntegrityError:
+        return {
+            "success": True,
+            "message": "Registration successful!",
+            "user": {
+                "user_id": new_id,
+                "username": u_clean,
+                "name": n_clean,
+                "role": "user",
+                "location": loc_clean
+            }
+        }
+    except Exception as e:
         conn.close()
-        return {"success": False, "error": "Username already exists"}
+        return {"success": False, "error": f"Registration failed: {str(e)}"}
 
 
 # ========== IoT DATA FUNCTIONS ==========

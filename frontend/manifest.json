@@ -1,0 +1,101 @@
+{
+  "name": "Agri Gram AI",
+  "short_name": "Agri Gram",
+  "description": "Smart Farming Assistant - AI Soil Analysis, Weather Forecasts, Crop Planning & Disease Detection",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1b5e20",
+  "theme_color": "#1b5e20",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["agriculture", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icons/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Soil to Crop",
+      "short_name": "Soil",
+      "description": "Upload soil photo to get crop recommendations",
+      "url": "/dashboard.html#soil",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Weather Forecast",
+      "short_name": "Weather",
+      "description": "7-day farming weather forecast & irrigation advice",
+      "url": "/dashboard.html#weather",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Smart Water Calculator",
+      "short_name": "Water",
+      "description": "Calculate crop water requirement in liters",
+      "url": "/dashboard.html#water",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "AI Farming Chat",
+      "short_name": "Chat",
+      "description": "Ask agricultural advice in Tamil & English",
+      "url": "/dashboard.html#chat",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96" }]
+    }
+  ],
+  "screenshots": []
+}

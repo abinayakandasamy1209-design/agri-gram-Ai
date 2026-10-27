@@ -1,66 +1,324 @@
-<!DOCTYPE html>
-<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>🌾 Agri Gram AI - Login</title>
+
+<!-- PWA & Mobile Web App Meta Tags -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1b5e20">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Agri Gram">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif; }
-  body { background:linear-gradient(135deg,#1b5e20,#2e7d32,#43a047); min-height:100vh;
-         display:flex; align-items:center; justify-content:center; }
-  .login-container { background:rgba(255,255,255,0.12); backdrop-filter:blur(12px);
-         border-radius:20px; padding:40px; width:380px; max-width:90%;
-         border:1px solid rgba(255,255,255,0.2); box-shadow:0 8px 32px rgba(0,0,0,0.3); }
-  .logo { text-align:center; margin-bottom:24px; }
-  .logo h1 { font-size:32px; color:#fff; }
-  .logo p { color:#c8e6c9; font-size:14px; margin-top:4px; }
-  .form-group { margin-bottom:16px; }
-  .form-group label { display:block; color:#c8e6c9; font-size:13px; margin-bottom:6px; }
-  .form-group input { width:100%; padding:14px 16px; border-radius:12px; border:none;
-         font-size:15px; background:rgba(255,255,255,0.15); color:#fff;
-         outline:none; transition:0.3s; }
-  .form-group input::placeholder { color:rgba(255,255,255,0.5); }
-  .form-group input:focus { background:rgba(255,255,255,0.25); box-shadow:0 0 0 2px #69f0ae; }
-  .login-btn { width:100%; padding:14px; border:none; border-radius:12px;
-         background:#ffca28; color:#1b5e20; font-size:16px; font-weight:700;
-         cursor:pointer; transition:0.3s; margin-top:8px; }
-  .login-btn:hover { background:#ffd54f; transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.2); }
-  .error-msg { color:#ff5252; font-size:13px; text-align:center; margin-top:12px; display:none; }
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,sans-serif; }
+  body {
+    background:linear-gradient(135deg,#1b5e20,#2e7d32,#43a047);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .login-container {
+    background:rgba(255,255,255,0.14);
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+    border-radius:24px;
+    padding:36px 32px;
+    width:420px;
+    max-width:100%;
+    border:1px solid rgba(255,255,255,0.22);
+    box-shadow:0 12px 40px rgba(0,0,0,0.35);
+    color:#fff;
+  }
+  .logo { text-align:center; margin-bottom:20px; }
+  .logo h1 { font-size:30px; color:#fff; display:flex; align-items:center; justify-content:center; gap:8px; }
+  .logo p { color:#c8e6c9; font-size:13.5px; margin-top:4px; font-weight:500; }
+
+  /* Server status indicator */
+  .server-badge {
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:4px 12px;
+    border-radius:20px;
+    font-size:11.5px;
+    font-weight:600;
+    margin-top:8px;
+    background:rgba(0,0,0,0.2);
+    border:1px solid rgba(255,255,255,0.15);
+    transition:0.3s ease;
+  }
+  .server-badge.online { background:rgba(46,125,50,0.35); color:#a5d6a7; border-color:#66bb6a; }
+  .server-badge.offline { background:rgba(198,40,40,0.35); color:#ffcdd2; border-color:#ef5350; cursor:pointer; }
+  .pulse-dot {
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#66bb6a;
+    box-shadow:0 0 8px #66bb6a;
+    display:inline-block;
+  }
+  .server-badge.offline .pulse-dot { background:#ef5350; box-shadow:0 0 8px #ef5350; }
+
+  /* Saved user notification card */
+  .saved-account-pill {
+    background:rgba(255,255,255,0.15);
+    border:1px dashed rgba(255,255,255,0.3);
+    border-radius:12px;
+    padding:8px 12px;
+    margin-bottom:16px;
+    font-size:12.5px;
+    display:none;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .saved-account-pill span { color:#ffe082; font-weight:600; }
+  .clear-saved-btn {
+    background:none;
+    border:none;
+    color:rgba(255,255,255,0.7);
+    cursor:pointer;
+    font-size:11px;
+    text-decoration:underline;
+  }
+  .clear-saved-btn:hover { color:#ff8a80; }
+
+  .form-group { margin-bottom:14px; text-align:left; }
+  .form-group label { display:block; color:#c8e6c9; font-size:12.5px; margin-bottom:5px; font-weight:600; }
+  .input-wrap { position:relative; }
+  .form-group input {
+    width:100%;
+    padding:13px 16px;
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,0.15);
+    font-size:14.5px;
+    background:rgba(255,255,255,0.16);
+    color:#fff;
+    outline:none;
+    transition:0.25s;
+  }
+  .form-group input::placeholder { color:rgba(255,255,255,0.55); }
+  .form-group input:focus {
+    background:rgba(255,255,255,0.25);
+    border-color:#69f0ae;
+    box-shadow:0 0 0 3px rgba(105,240,174,0.25);
+  }
+
+  /* Remember login checkbox */
+  .remember-row {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:14px;
+    font-size:13px;
+  }
+  .remember-label {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:#c8e6c9;
+    cursor:pointer;
+    user-select:none;
+  }
+  .remember-label input[type="checkbox"] {
+    width:16px;
+    height:16px;
+    cursor:pointer;
+    accent-color:#ffca28;
+  }
+
+  /* Buttons */
+  .login-btn {
+    width:100%;
+    padding:13px;
+    border:none;
+    border-radius:12px;
+    background:#ffca28;
+    color:#1b5e20;
+    font-size:15.5px;
+    font-weight:700;
+    cursor:pointer;
+    transition:0.25s;
+    margin-top:4px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+  }
+  .login-btn:hover {
+    background:#ffd54f;
+    transform:translateY(-2px);
+    box-shadow:0 6px 16px rgba(0,0,0,0.25);
+  }
+  .login-btn:active { transform:translateY(0); }
+  .login-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+
+  /* Demo Account Pills */
+  .demo-accounts {
+    margin-top:16px;
+    padding-top:14px;
+    border-top:1px solid rgba(255,255,255,0.15);
+    text-align:center;
+  }
+  .demo-title { font-size:11.5px; color:#c8e6c9; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px; }
+  .demo-chips { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; }
+  .chip-btn {
+    background:rgba(255,255,255,0.14);
+    border:1px solid rgba(255,255,255,0.2);
+    color:#fff;
+    padding:6px 12px;
+    border-radius:16px;
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+    transition:0.2s;
+  }
+  .chip-btn:hover { background:rgba(255,255,255,0.28); border-color:#69f0ae; color:#ffe082; }
+
+  /* Error / Status Messages */
+  .status-msg {
+    color:#ff5252;
+    background:rgba(255,82,82,0.12);
+    border:1px solid rgba(255,82,82,0.3);
+    border-radius:10px;
+    padding:10px 12px;
+    font-size:12.5px;
+    text-align:center;
+    margin-top:12px;
+    display:none;
+    line-height:1.4;
+  }
+  .status-msg.success {
+    color:#69f0ae;
+    background:rgba(105,240,174,0.12);
+    border-color:rgba(105,240,174,0.3);
+  }
+
   .register-link { text-align:center; margin-top:16px; color:#c8e6c9; font-size:13px; }
-  .register-link a { color:#69f0ae; text-decoration:none; font-weight:600; }
+  .register-link a { color:#69f0ae; text-decoration:none; font-weight:700; cursor:pointer; }
   .register-link a:hover { text-decoration:underline; }
-  .features-hint { text-align:center; margin-top:20px; padding-top:16px;
-         border-top:1px solid rgba(255,255,255,0.15); }
-  .features-hint p { color:rgba(255,255,255,0.6); font-size:11px; }
+
+  .features-hint {
+    text-align:center;
+    margin-top:16px;
+    padding-top:14px;
+    border-top:1px solid rgba(255,255,255,0.15);
+  }
+  .features-hint p { color:rgba(255,255,255,0.65); font-size:11px; line-height:1.4; }
+
+  /* PWA Install Banner */
+  .pwa-banner {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid #69f0ae;
+    border-radius: 14px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    animation: fadeIn 0.3s;
+  }
+  .pwa-banner-left { display: flex; align-items: center; gap: 10px; text-align: left; }
+  .pwa-banner-icon { font-size: 24px; }
+  .pwa-banner-title { font-size: 13px; font-weight: 700; color: #fff; }
+  .pwa-banner-desc { font-size: 11px; color: #c8e6c9; }
+  .pwa-install-btn {
+    background: #69f0ae;
+    color: #1b5e20;
+    border: none;
+    border-radius: 10px;
+    padding: 7px 14px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: 0.2s;
+  }
+  .pwa-install-btn:hover { background: #b9f6ca; transform: scale(1.02); }
 
   /* Register form (hidden initially) */
   .register-form { display:none; }
   .back-btn { background:transparent; border:1px solid rgba(255,255,255,0.3); color:#fff; }
-  .back-btn:hover { background:rgba(255,255,255,0.1); transform:none; }
+  .back-btn:hover { background:rgba(255,255,255,0.15); transform:none; }
 </style>
 </head>
 <body>
 
 <div class="login-container">
+  <!-- PWA Install Banner -->
+  <div class="pwa-banner" id="pwaInstallBanner">
+    <div class="pwa-banner-left">
+      <span class="pwa-banner-icon">📲</span>
+      <div>
+        <div class="pwa-banner-title">Install Agri Gram App</div>
+        <div class="pwa-banner-desc">Fast 1-tap mobile access & offline guide</div>
+      </div>
+    </div>
+    <button class="pwa-install-btn" onclick="promptPWAInstall()">Install</button>
+  </div>
+
   <!-- LOGIN FORM -->
   <div id="loginForm">
     <div class="logo">
       <h1>🌾 Agri Gram AI</h1>
       <p>Smart Farming Assistant</p>
+      <div>
+        <div class="server-badge online" id="serverBadge" onclick="checkServerHealth(true)">
+          <span class="pulse-dot" id="pulseDot"></span>
+          <span id="serverBadgeText">Checking server...</span>
+        </div>
+      </div>
     </div>
+
+    <!-- Saved Account Notice -->
+    <div class="saved-account-pill" id="savedAccountPill">
+      <div>💾 Saved Account: <span id="savedUsernameText">-</span></div>
+      <button class="clear-saved-btn" onclick="clearSavedCredentials()" title="Clear saved login info">Clear</button>
+    </div>
+
     <div class="form-group">
       <label>Username</label>
-      <input type="text" id="loginUser" placeholder="Enter username">
+      <input type="text" id="loginUser" placeholder="Enter username (e.g. abinaya)" autocomplete="username">
     </div>
+
     <div class="form-group">
       <label>Password</label>
-      <input type="password" id="loginPass" placeholder="Enter password">
+      <input type="password" id="loginPass" placeholder="Enter password" autocomplete="current-password">
     </div>
-    <button class="login-btn" onclick="doLogin()">🔐 Login</button>
-    <div class="error-msg" id="loginError">Invalid username or password!</div>
+
+    <div class="remember-row">
+      <label class="remember-label">
+        <input type="checkbox" id="rememberMe" checked>
+        <span>Save login info on this device</span>
+      </label>
+    </div>
+
+    <button class="login-btn" id="loginSubmitBtn" onclick="doLogin()">
+      <span>🔐</span>
+      <span id="loginBtnText">Login</span>
+    </button>
+
+    <div class="status-msg" id="loginError"></div>
+
+    <!-- Quick Demo Accounts -->
+    <div class="demo-accounts">
+      <div class="demo-title">⚡ Quick 1-Click Demo Login</div>
+      <div class="demo-chips">
+        <button type="button" class="chip-btn" onclick="quickFill('abinaya','abinaya123')">🌾 Abinaya</button>
+        <button type="button" class="chip-btn" onclick="quickFill('farmer','farmer123')">👨‍🌾 Farmer</button>
+        <button type="button" class="chip-btn" onclick="quickFill('admin','admin123')">🛡️ Admin</button>
+      </div>
+    </div>
+
     <div class="register-link">
-      Don't have an account? <a href="#" onclick="showRegister()">Register</a>
+      Don't have an account? <a onclick="showRegister()">Register Here</a>
     </div>
+
     <div class="features-hint">
       <p>18 AI features • Climate Risk Score • IoT Monitoring • Tamil Support</p>
     </div>
@@ -72,24 +330,41 @@
       <h1>🌾 Register</h1>
       <p>Create your farmer account</p>
     </div>
+
     <div class="form-group">
       <label>Full Name</label>
-      <input type="text" id="regName" placeholder="Enter your name">
+      <input type="text" id="regName" placeholder="Enter your full name">
     </div>
+
     <div class="form-group">
       <label>Location</label>
       <input type="text" id="regLocation" placeholder="Your city/village" value="Coimbatore">
     </div>
+
     <div class="form-group">
       <label>Username</label>
-      <input type="text" id="regUser" placeholder="Choose username">
+      <input type="text" id="regUser" placeholder="Choose a username (e.g. abinaya)">
     </div>
+
     <div class="form-group">
       <label>Password</label>
-      <input type="password" id="regPass" placeholder="Choose password">
+      <input type="password" id="regPass" placeholder="Choose a secure password">
     </div>
-    <button class="login-btn" onclick="doRegister()">✅ Register</button>
-    <div class="error-msg" id="regError"></div>
+
+    <div class="remember-row">
+      <label class="remember-label">
+        <input type="checkbox" id="regRemember" checked>
+        <span>Save credentials and login automatically</span>
+      </label>
+    </div>
+
+    <button class="login-btn" id="regSubmitBtn" onclick="doRegister()">
+      <span>✅</span>
+      <span id="regBtnText">Create Account</span>
+    </button>
+
+    <div class="status-msg" id="regError"></div>
+
     <div style="margin-top:12px;">
       <button class="login-btn back-btn" onclick="showLogin()">← Back to Login</button>
     </div>
@@ -97,61 +372,196 @@
 </div>
 
 <script>
-const API = window.location.origin + '/api';
+// Smart API host resolution:
+// Connects to local Flask server if opened via file:// or Live Server port,
+// otherwise uses the current origin in production/Render deployment.
+const API = (function() {
+  if (window.location.protocol === 'file:' || !window.location.origin || window.location.origin === 'null' || window.location.port === '5500' || window.location.port === '3000') {
+    return 'http://127.0.0.1:5000/api';
+  }
+  return window.location.origin + '/api';
+})();
 
-// Check if already logged in
+let isServerOnline = false;
+
+// If already logged in, redirect to dashboard
 if (localStorage.getItem('agri_user')) {
   window.location.href = 'dashboard.html';
 }
 
-async function doLogin() {
-  const username = document.getElementById('loginUser').value.trim();
-  const password = document.getElementById('loginPass').value.trim();
-  const errorEl = document.getElementById('loginError');
-  errorEl.style.display = 'none';
-
-  if (!username || !password) {
-    errorEl.textContent = 'Please enter username and password!';
-    errorEl.style.display = 'block';
-    return;
-  }
+// -------------------------------------------------------------
+// Check Server Connectivity
+// -------------------------------------------------------------
+async function checkServerHealth(manual = false) {
+  const badge = document.getElementById('serverBadge');
+  const badgeText = document.getElementById('serverBadgeText');
+  if (manual) badgeText.textContent = 'Checking...';
 
   try {
-    const res = await fetch(API + '/login', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({username, password})
-    });
-    const data = await res.json();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch(API + '/health', { signal: controller.signal });
+    clearTimeout(timeoutId);
 
-    if (data.success) {
-      // Save user info in localStorage
-      localStorage.setItem('agri_user', JSON.stringify(data));
-      window.location.href = 'dashboard.html';
+    if (res.ok) {
+      isServerOnline = true;
+      badge.className = 'server-badge online';
+      badgeText.textContent = '🟢 Server Online (Ready)';
+      badge.title = 'Agri Gram AI backend is connected and ready';
     } else {
-      errorEl.textContent = data.error || 'Invalid username or password!';
-      errorEl.style.display = 'block';
+      throw new Error('Non-200 response');
     }
   } catch(e) {
-    errorEl.textContent = 'Server not running! Start python app.py first.';
-    errorEl.style.display = 'block';
+    // Try fallback check on /api
+    try {
+      const res2 = await fetch(API, { signal: AbortSignal.timeout(2000) });
+      if (res2.ok) {
+        isServerOnline = true;
+        badge.className = 'server-badge online';
+        badgeText.textContent = '🟢 Server Online';
+        return;
+      }
+    } catch(err) {}
+
+    isServerOnline = false;
+    badge.className = 'server-badge offline';
+    badgeText.textContent = '🔴 Server Offline (Click to retry)';
+    badge.title = 'Server not running at ' + API + '. Start python app.py first';
   }
 }
 
+// -------------------------------------------------------------
+// Saved Credentials & Remember Me Logic
+// -------------------------------------------------------------
+function loadSavedCredentials() {
+  try {
+    const raw = localStorage.getItem('agri_saved_login');
+    if (!raw) return;
+    const creds = JSON.parse(raw);
+    if (creds && creds.username) {
+      document.getElementById('loginUser').value = creds.username;
+      if (creds.password) {
+        document.getElementById('loginPass').value = creds.password;
+      }
+      document.getElementById('rememberMe').checked = true;
+
+      const pill = document.getElementById('savedAccountPill');
+      const pillText = document.getElementById('savedUsernameText');
+      if (pill && pillText) {
+        pillText.textContent = creds.username + (creds.name ? ` (${creds.name})` : '');
+        pill.style.display = 'flex';
+      }
+    }
+  } catch(e) {
+    console.error('Error loading saved login credentials:', e);
+  }
+}
+
+function clearSavedCredentials() {
+  localStorage.removeItem('agri_saved_login');
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('savedAccountPill').style.display = 'none';
+  showError('loginError', 'Saved account cleared. You can type another username or use Quick Login.');
+}
+
+function quickFill(user, pass) {
+  document.getElementById('loginUser').value = user;
+  document.getElementById('loginPass').value = pass;
+  document.getElementById('rememberMe').checked = true;
+  hideError('loginError');
+  doLogin();
+}
+
+// -------------------------------------------------------------
+// Login Action
+// -------------------------------------------------------------
+async function doLogin() {
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPass').value.trim();
+  const remember = document.getElementById('rememberMe').checked;
+  const btn = document.getElementById('loginSubmitBtn');
+  const btnText = document.getElementById('loginBtnText');
+
+  hideError('loginError');
+
+  if (!username || !password) {
+    showError('loginError', '⚠️ Please enter both username and password!');
+    return;
+  }
+
+  btn.disabled = true;
+  btnText.textContent = 'Logging in...';
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+    const res = await fetch(API + '/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username, password}),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    const data = await res.json();
+
+    if (data.success) {
+      // 1. Save active session
+      localStorage.setItem('agri_user', JSON.stringify(data));
+
+      // 2. Handle Remember Me / Save Login Info
+      if (remember) {
+        localStorage.setItem('agri_saved_login', JSON.stringify({
+          username: data.username || username,
+          password: password,
+          name: data.name || username
+        }));
+      } else {
+        localStorage.removeItem('agri_saved_login');
+      }
+
+      showSuccess('loginError', '✅ Login successful! Redirecting to farm dashboard...');
+      setTimeout(() => {
+        window.location.href = 'dashboard.html';
+      }, 500);
+    } else {
+      btn.disabled = false;
+      btnText.textContent = 'Login';
+      showError('loginError', data.error || 'Invalid username or password!');
+    }
+  } catch(e) {
+    btn.disabled = false;
+    btnText.textContent = 'Login';
+    showError('loginError',
+      '⚠️ Server not running! Please start the backend by running:<br><b>python app.py</b><br>in your terminal, then try again.'
+    );
+    checkServerHealth();
+  }
+}
+
+// -------------------------------------------------------------
+// Register Action
+// -------------------------------------------------------------
 async function doRegister() {
   const name = document.getElementById('regName').value.trim();
   const location = document.getElementById('regLocation').value.trim();
   const username = document.getElementById('regUser').value.trim();
   const password = document.getElementById('regPass').value.trim();
-  const errorEl = document.getElementById('regError');
-  errorEl.style.display = 'none';
+  const remember = document.getElementById('regRemember').checked;
+  const btn = document.getElementById('regSubmitBtn');
+  const btnText = document.getElementById('regBtnText');
 
-  if (!name || !username || !password) {
-    errorEl.textContent = 'Fill all fields!';
-    errorEl.style.display = 'block';
-    errorEl.style.color = '#ff5252';
+  hideError('regError');
+
+  if (!username || !password) {
+    showError('regError', '⚠️ Username and password are required!');
     return;
   }
+
+  btn.disabled = true;
+  btnText.textContent = 'Creating account...';
 
   try {
     const res = await fetch(API + '/register', {
@@ -162,30 +572,68 @@ async function doRegister() {
     const data = await res.json();
 
     if (data.success) {
-      errorEl.textContent = '✅ Registration successful! Please login.';
-      errorEl.style.display = 'block';
-      errorEl.style.color = '#69f0ae';
-      setTimeout(() => showLogin(), 1500);
+      // Always save credentials for instant relogin
+      if (remember) {
+        localStorage.setItem('agri_saved_login', JSON.stringify({
+          username, password, name: name || username
+        }));
+      }
+
+      showSuccess('regError', '✅ Registration successful! Saved for instant login.');
+
+      // Pre-fill login inputs
+      document.getElementById('loginUser').value = username;
+      document.getElementById('loginPass').value = password;
+      document.getElementById('rememberMe').checked = true;
+
+      setTimeout(() => {
+        showLogin();
+        showSuccess('loginError', `✅ Welcome ${name || username}! Account saved. Click Login to enter.`);
+        btn.disabled = false;
+        btnText.textContent = 'Create Account';
+      }, 1200);
     } else {
-      errorEl.textContent = data.error || 'Registration failed!';
-      errorEl.style.display = 'block';
-      errorEl.style.color = '#ff5252';
+      btn.disabled = false;
+      btnText.textContent = 'Create Account';
+      showError('regError', data.error || 'Registration failed!');
     }
   } catch(e) {
-    errorEl.textContent = 'Server not running!';
-    errorEl.style.display = 'block';
-    errorEl.style.color = '#ff5252';
+    btn.disabled = false;
+    btnText.textContent = 'Create Account';
+    showError('regError', '⚠️ Server not running! Start "python app.py" first.');
   }
 }
 
 function showRegister() {
+  hideError('loginError');
   document.getElementById('loginForm').style.display = 'none';
   document.getElementById('registerForm').style.display = 'block';
 }
 
 function showLogin() {
+  hideError('regError');
   document.getElementById('registerForm').style.display = 'none';
   document.getElementById('loginForm').style.display = 'block';
+  loadSavedCredentials();
+}
+
+function showError(elementId, msg) {
+  const el = document.getElementById(elementId);
+  el.className = 'status-msg';
+  el.innerHTML = msg;
+  el.style.display = 'block';
+}
+
+function showSuccess(elementId, msg) {
+  const el = document.getElementById(elementId);
+  el.className = 'status-msg success';
+  el.innerHTML = msg;
+  el.style.display = 'block';
+}
+
+function hideError(elementId) {
+  const el = document.getElementById(elementId);
+  if (el) el.style.display = 'none';
 }
 
 // Enter key support
@@ -198,6 +646,14 @@ document.addEventListener('keypress', function(e) {
     }
   }
 });
+
+// Initialization
+document.addEventListener('DOMContentLoaded', () => {
+  loadSavedCredentials();
+  checkServerHealth();
+  setInterval(checkServerHealth, 10000);
+});
 </script>
+<script src="/pwa-helper.js"></script>
 </body>
 </html>

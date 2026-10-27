@@ -14,16 +14,30 @@ import climate_risk
 import iot_module
 import db as database   # smart router: Supabase online, SQLite fallback
 
-# Serve the frontend. Works whether index.html sits next to app.py (flat)
-# or in a ../frontend folder (structured layout).
+# Serve the frontend. Works whether running from root, backend/, or production container.
 _here = os.path.dirname(os.path.abspath(__file__))
-_candidates = [_here, os.path.join(_here, "..", "frontend"), os.path.join(_here, "frontend")]
-FRONTEND_DIR = next((d for d in _candidates if os.path.exists(os.path.join(d, "index.html"))), _here)
+_candidates = [
+    os.path.join(_here, "..", "frontend"),
+    os.path.join(_here, "frontend"),
+    _here
+]
+# Select the folder containing dashboard.html (the canonical full frontend)
+FRONTEND_DIR = next((d for d in _candidates if os.path.exists(os.path.join(d, "dashboard.html"))), _here)
 app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path="")
 CORS(app)
 
-UPLOAD_DIR = "uploads"
+UPLOAD_DIR = os.path.join(_here, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+
+@app.route("/api/health", methods=["GET"])
+def health():
+    return jsonify({
+        "status": "healthy",
+        "app": "Agri Gram AI",
+        "version": "1.0.0",
+        "database": "online" if getattr(database, "SUPABASE_OK", False) else "local_sqlite"
+    })
 
 
 @app.route("/api", methods=["GET"])
@@ -32,7 +46,7 @@ def home():
                     "features": ["soil-crop", "weather", "water", "calendar",
                                  "disease", "chat", "profit", "fertilizer",
                                  "rotation", "yield", "alerts", "schemes",
-                                 "analytics"]})
+                                 "analytics", "health"]})
 
 
 # --- 1. Soil photo -> crop recommendation ---
@@ -319,8 +333,9 @@ def admin_activity():
     return jsonify(database.get_all_activity(limit))
 
 
-# --- Serve the frontend (index.html) at the root URL ---
+# --- Serve frontend files ---
 @app.route("/")
+@app.route("/index.html")
 def serve_frontend():
     return app.send_static_file("index.html")
 
@@ -330,7 +345,43 @@ def serve_dashboard():
     return app.send_static_file("dashboard.html")
 
 
+# --- PWA Specific Endpoints ---
+@app.route("/manifest.json")
+def serve_manifest():
+    response = app.send_static_file("manifest.json")
+    response.headers["Content-Type"] = "application/manifest+json"
+    response.headers["Cache-Control"] = "public, max-age=3600"
+    return response
+
+
+@app.route("/sw.js")
+def serve_sw():
+    response = app.send_static_file("sw.js")
+    response.headers["Content-Type"] = "application/javascript"
+    response.headers["Service-Worker-Allowed"] = "/"
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
+
+
+@app.route("/pwa-helper.js")
+def serve_pwa_helper():
+    response = app.send_static_file("pwa-helper.js")
+    response.headers["Content-Type"] = "application/javascript"
+    return response
+
+
+@app.route("/offline.html")
+def serve_offline():
+    return app.send_static_file("offline.html")
+
+
+@app.route("/favicon.ico")
+def serve_favicon():
+    return app.send_static_file("favicon.ico")
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    print(f"🌾 Agri Gram AI running on port {port}")
+    print(f"🌾 Agri Gram AI server running on http://127.0.0.1:{port}")
     app.run(host="0.0.0.0", port=port)
+

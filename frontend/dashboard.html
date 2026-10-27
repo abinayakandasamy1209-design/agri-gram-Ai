@@ -2,8 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🌾 Agri Gram AI</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>🌾 Agri Gram AI - Smart Farming Assistant</title>
+
+<!-- PWA & Mobile Web App Meta Tags -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1b5e20">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Agri Gram">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', -apple-system, sans-serif; }
@@ -155,12 +165,61 @@
   @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.6;} }
   @keyframes fade { from{opacity:0;transform:translateY(10px);} to{opacity:1;} }
 
-  /* Mobile responsive */
+  /* PWA Install Button in Top Navbar */
+  .pwa-install-top-btn {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #2e7d32, #1b5e20);
+    color: #fff;
+    border: 1px solid #69f0ae;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .pwa-install-top-btn:hover { background: #43a047; transform: translateY(-1px); }
+
+  /* Mobile bottom navigation and backdrop */
+  .mobile-bottom-nav { display: none; }
+  .sidebar-backdrop { display: none; }
+
+  /* Mobile responsive styles */
   @media (max-width:768px) {
-    .sidebar { transform:translateX(-100%); width:260px; }
+    .sidebar { transform:translateX(-100%); width:270px; z-index:1200; box-shadow:4px 0 20px rgba(0,0,0,0.25); }
     .sidebar.open { transform:translateX(0); }
-    .main-content { margin-left:0; }
+    .sidebar-backdrop {
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:1150;
+      backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
+    }
+    .sidebar-backdrop.active { display:block; }
+    .main-content { margin-left:0; padding:16px 14px 85px 14px; }
     .hamburger { display:block !important; }
+    .nav-logo h1 { font-size:16px; }
+    .nav-logo p { display:none; }
+    .lang-btn { padding:6px 10px; font-size:12px; }
+    .profile-btn .name { display:none; }
+    .profile-btn { padding:4px; border-radius:50%; }
+
+    .mobile-bottom-nav {
+      display:flex; position:fixed; bottom:0; left:0; right:0; height:60px;
+      background:var(--sidebar-bg); border-top:1px solid var(--border);
+      z-index:1000; justify-content:space-around; align-items:center;
+      padding:0 4px; box-shadow:0 -2px 12px rgba(0,0,0,0.08);
+    }
+    .nav-tab {
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      flex:1; padding:6px 0; color:var(--text-secondary); font-size:10px;
+      font-weight:600; cursor:pointer; transition:0.15s; border-radius:8px;
+    }
+    .nav-tab .icon { font-size:18px; margin-bottom:2px; }
+    .nav-tab.active { color:var(--primary); }
+  }
+  @media (min-width:769px) {
+    .mobile-bottom-nav { display:none !important; }
+    .sidebar-backdrop { display:none !important; }
   }
   .hamburger { display:none; background:none; border:none; font-size:22px; cursor:pointer;
     color:var(--text); padding:8px; width:auto; margin-right:10px; }
@@ -188,6 +247,7 @@ function logout() { localStorage.removeItem('agri_user'); window.location.href =
   </div>
   <div class="nav-spacer"></div>
   <div class="nav-right">
+    <button class="pwa-install-top-btn" id="pwaInstallBtn" onclick="promptPWAInstall()">📲 Install App</button>
     <button class="lang-btn" onclick="toggleLangMenu()">🌐 English ▾</button>
     <div class="lang-dropdown" id="langDropdown">
       <div class="lang-option active" onclick="setLang('en','English')">🇮🇳 English</div>
@@ -243,10 +303,11 @@ function logout() { localStorage.removeItem('agri_user'); window.location.href =
   <div class="sidebar-item" onclick="show('climate',this)"><span class="s-icon">🛰️</span> Climate Risk</div>
   <div class="sidebar-item" onclick="show('iot',this)"><span class="s-icon">🌡️</span> IoT Live</div>
 </aside>
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
 
 <!-- MAIN CONTENT -->
 <div class="main-content">
-  <div class="panel" id="dashboard">
+  <div class="panel active" id="dashboard">
     <h2>🏠 Welcome to Agri Gram AI</h2>
     <p style="color:var(--text-secondary);margin-bottom:20px;">Smart Farming Assistant — by Abinaya K</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px;">
@@ -598,16 +659,45 @@ function logout() { localStorage.removeItem('agri_user'); window.location.href =
 
 </div>
 
+<!-- MOBILE BOTTOM NAVIGATION (Quick Access for Mobile PWA) -->
+<nav class="mobile-bottom-nav">
+  <div class="nav-tab active" data-tab="dashboard" onclick="show('dashboard', this); updateMobileNav('dashboard');">
+    <span class="icon">🏠</span>
+    <span>Home</span>
+  </div>
+  <div class="nav-tab" data-tab="soil" onclick="show('soil', this); updateMobileNav('soil');">
+    <span class="icon">📸</span>
+    <span>Soil</span>
+  </div>
+  <div class="nav-tab" data-tab="weather" onclick="show('weather', this); updateMobileNav('weather');">
+    <span class="icon">🌦️</span>
+    <span>Weather</span>
+  </div>
+  <div class="nav-tab" data-tab="water" onclick="show('water', this); updateMobileNav('water');">
+    <span class="icon">💧</span>
+    <span>Water</span>
+  </div>
+  <div class="nav-tab" data-tab="chat" onclick="show('chat', this); updateMobileNav('chat');">
+    <span class="icon">🗣️</span>
+    <span>Chat</span>
+  </div>
+  <div class="nav-tab" onclick="toggleSidebar();">
+    <span class="icon">☰</span>
+    <span>More</span>
+  </div>
+</nav>
+
 <script>
 
 // Auto-detect backend: use the same site when hosted online, localhost when opened locally
-const API = (location.protocol === "file:" || location.hostname === "")
-  ? "http://localhost:5000/api"
+const API = (location.protocol === "file:" || location.hostname === "" || location.port === "5500" || location.port === "3000")
+  ? "http://127.0.0.1:5000/api"
   : location.origin + "/api";
 const CROPS = ["Rice","Wheat","Cotton","Sugarcane","Groundnut","Maize","Millets","Pulses","Vegetables","Coconut"];
 
 window.onload = () => {
   initProfile(); updateThemeLabel();
+  show('dashboard', document.querySelector('.sidebar-item'));
   ["waterCrop","calCrop","profitCrop","fertCrop","rotCrop","yieldCrop","rCrop","smsCrop","climCrop"].forEach(id => {
     const sel = document.getElementById(id);
     CROPS.forEach(c => sel.innerHTML += `<option value="${c}">${c}</option>`);
@@ -619,11 +709,25 @@ function show(id, el) {
   document.querySelectorAll('.sidebar-item').forEach(t => t.classList.remove('active'));
   const panel = document.getElementById(id);
   if (panel) panel.classList.add('active');
-  if (el) el.classList.add('active');
+  if (el && el.classList && el.classList.contains('sidebar-item')) el.classList.add('active');
+  
+  // Sync mobile nav tab
+  updateMobileNav(id);
+
   // Close sidebar on mobile
   if (window.innerWidth <= 768) {
-    document.getElementById('sidebar').classList.remove('open');
+    const sb = document.getElementById('sidebar');
+    const bd = document.getElementById('sidebarBackdrop');
+    if (sb) sb.classList.remove('open');
+    if (bd) bd.classList.remove('active');
   }
+}
+
+function updateMobileNav(tabId) {
+  document.querySelectorAll('.mobile-bottom-nav .nav-tab').forEach(t => {
+    if (t.getAttribute('data-tab') === tabId) t.classList.add('active');
+    else t.classList.remove('active');
+  });
 }
 function preview(inputId, imgId) {
   const file = document.getElementById(inputId).files[0];
@@ -1636,7 +1740,12 @@ function toggleThemeFromMenu() {
 }
 
 function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
+  const sb = document.getElementById('sidebar');
+  const bd = document.getElementById('sidebarBackdrop');
+  if (sb) {
+    sb.classList.toggle('open');
+    if (bd) bd.classList.toggle('active', sb.classList.contains('open'));
+  }
 }
 
 // Update theme label on load
@@ -1734,5 +1843,6 @@ window.addEventListener('load', function(){ initProfile(); updateThemeLabel(); }
 
 
 </script>
+<script src="/pwa-helper.js"></script>
 </body>
 </html>

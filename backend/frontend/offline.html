@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌾 Agri Gram AI - Offline Mode</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,sans-serif; }
+  body {
+    background:linear-gradient(135deg,#1b5e20,#2e7d32,#43a047);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    color:#fff;
+  }
+  .offline-card {
+    background:rgba(255,255,255,0.14);
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+    border-radius:24px;
+    padding:36px 28px;
+    width:440px;
+    max-width:100%;
+    border:1px solid rgba(255,255,255,0.22);
+    box-shadow:0 12px 40px rgba(0,0,0,0.35);
+    text-align:center;
+  }
+  .offline-icon {
+    font-size:56px;
+    margin-bottom:12px;
+    display:inline-block;
+    animation:float 3s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%,100% { transform:translateY(0); }
+    50% { transform:translateY(-8px); }
+  }
+  h1 { font-size:26px; margin-bottom:8px; font-weight:700; }
+  p.subtitle { color:#c8e6c9; font-size:14px; margin-bottom:20px; line-height:1.5; }
+  .badge {
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:rgba(255,167,38,0.25);
+    border:1px solid #ffa726;
+    color:#ffe0b2;
+    padding:6px 14px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:600;
+    margin-bottom:20px;
+  }
+  .tips-box {
+    background:rgba(0,0,0,0.2);
+    border-radius:14px;
+    padding:16px;
+    text-align:left;
+    margin-bottom:20px;
+    border:1px solid rgba(255,255,255,0.12);
+  }
+  .tips-box h3 { font-size:13.5px; color:#ffe082; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+  .tips-box ul { list-style:none; }
+  .tips-box li { font-size:12.5px; color:#e8f5e9; margin-bottom:8px; display:flex; align-items:flex-start; gap:8px; line-height:1.4; }
+  .tips-box li:last-child { margin-bottom:0; }
+  .retry-btn {
+    width:100%;
+    padding:13px;
+    border:none;
+    border-radius:12px;
+    background:#ffca28;
+    color:#1b5e20;
+    font-size:15px;
+    font-weight:700;
+    cursor:pointer;
+    transition:0.25s;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+  }
+  .retry-btn:hover {
+    background:#ffd54f;
+    transform:translateY(-2px);
+    box-shadow:0 6px 16px rgba(0,0,0,0.25);
+  }
+  .secondary-link {
+    display:inline-block;
+    margin-top:14px;
+    color:#a5d6a7;
+    font-size:13px;
+    text-decoration:none;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .secondary-link:hover { text-decoration:underline; }
+</style>
+</head>
+<body>
+
+<div class="offline-card">
+  <div class="offline-icon">🌾</div>
+  <div class="badge">📡 You are currently offline</div>
+  <h1>Agri Gram AI</h1>
+  <p class="subtitle">Internet connection was lost. Live AI analysis and weather forecasts will resume as soon as your device reconnects.</p>
+
+  <div class="tips-box">
+    <h3>💡 Quick Offline Farming Guide</h3>
+    <ul>
+      <li>💧 <strong>Water Management:</strong> Check soil moisture manually at 2-inch depth before irrigating.</li>
+      <li>☀️ <strong>Hot Days:</strong> Irrigate early morning (5-8 AM) or late evening (5-7 PM) to minimize evaporation.</li>
+      <li>📞 <strong>Kisan Helpline:</strong> Call 1800-180-1551 (Toll-Free, 24x7) for immediate telephone farming guidance.</li>
+    </ul>
+  </div>
+
+  <button class="retry-btn" onclick="retryConnection()">
+    <span>🔄</span> Check Connection & Retry
+  </button>
+  <br>
+  <a class="secondary-link" onclick="window.history.back()">← Return to Previous Page</a>
+</div>
+
+<script>
+function retryConnection() {
+  if (navigator.onLine) {
+    window.location.reload();
+  } else {
+    alert("Still offline. Please check your mobile data or Wi-Fi connection.");
+  }
+}
+
+window.addEventListener('online', () => {
+  window.location.reload();
+});
+</script>
+</body>
+</html>

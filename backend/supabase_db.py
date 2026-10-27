@@ -21,7 +21,7 @@ HEADERS = {
 # Max seconds to wait for Supabase. If the project is paused/asleep this
 # ensures we FAIL FAST and fall back to SQLite instead of hanging the
 # server (which caused the "Server not running!" error).
-TIMEOUT = 8
+TIMEOUT = 3
 
 
 def _get(table, params=""):
@@ -29,9 +29,9 @@ def _get(table, params=""):
     url = f"{SUPABASE_URL}/rest/v1/{table}?{params}"
     try:
         res = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
-        return res.json() if res.status_code == 200 else []
+        return res.json() if res.status_code == 200 else None
     except Exception:
-        return []
+        return None
 
 
 def _post(table, data):
@@ -197,19 +197,15 @@ def get_db_stats():
     }
 
 
-# Test connection on import
 def test_connection():
     """Test if Supabase is reachable"""
     try:
         result = _get("users", "limit=1")
         if isinstance(result, list):
-            print(f"  ✅ Supabase connected! URL: {SUPABASE_URL}")
+            print(f"  [DB] Supabase connected: {SUPABASE_URL}")
             return True
         else:
-            print(f"  ⚠️ Supabase response: {result}")
             return False
     except Exception as e:
-        print(f"  ❌ Supabase connection failed: {e}")
         return False
 
-test_connection()

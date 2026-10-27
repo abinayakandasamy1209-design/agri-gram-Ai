@@ -81,18 +81,81 @@ agri-gram-ai/
 
 ---
 
-## 🚀 How to Run
+## 🚀 How to Run Locally
 
-### 1. Start Backend
+### Option 1: One-Click (Windows)
+Double-click `run_app.bat` — it starts the server and opens `http://127.0.0.1:5000` automatically!
+
+### Option 2: Terminal
 ```bash
-cd backend
+# 1. Install dependencies
 pip install -r requirements.txt
+
+# 2. Run the application (from project root)
 python app.py
 ```
-API runs at `http://localhost:5000`
+Open **`http://127.0.0.1:5000`** in your browser.
 
-### 2. Open Frontend
-Open `frontend/index.html` in your browser. Done! 🎉
+> **Pre-configured Demo Accounts:**
+> - `abinaya` / `abinaya123` (Abinaya K)
+> - `farmer` / `farmer123` (Farmer User)
+> - `admin` / `admin123` (Admin)
+
+---
+
+## 📱 Progressive Web App (PWA) Features
+
+Agri Gram AI is now a full **Progressive Web App (PWA)** that can be installed on Android smartphones, tablets, and desktops like a native app:
+- 📲 **Standalone App Interface**: Launches without browser URL bars, tabs, or navigation controls.
+- 🌾 **Custom Branding & Icons**: Tailored golden wheat & emerald green theme with adaptive maskable icons.
+- 📡 **Offline Resilience**: Essential app shell and an offline farming advisory page work even when disconnected.
+- ⚡ **Fast Mobile Navigation**: Thumb-friendly mobile bottom navigation bar for instant access to Soil, Weather, Water, and Chat tools.
+- 🔒 **Secure**: HTTPS-ready with zero exposure of backend keys or secrets.
+
+---
+
+## 🌐 How to Deploy on Render
+
+Deploying Agri Gram AI to Render is automated and requires no manual server configuration:
+
+1. **Push to GitHub**:
+   Ensure all changes are pushed to your GitHub repository:
+   `https://github.com/abinayakandasamy1209-design/agri-gram-Ai`
+
+2. **Create New Web Service on Render**:
+   - Go to [dashboard.render.com](https://dashboard.render.com).
+   - Click **New +** → **Web Service**.
+   - Select **Build and deploy from a Git repository** and connect your repository: `agri-gram-Ai`.
+
+3. **Configure Service Settings**:
+   - **Name**: `agri-gram-ai`
+   - **Region**: Closest to you (e.g. Singapore or Frankfurt)
+   - **Branch**: `main`
+   - **Runtime**: `Python 3`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `gunicorn app:app`
+   *(Render will also automatically detect `render.yaml` and `Procfile` if using Blueprint).*
+
+4. **Click "Create Web Service"**:
+   Render will install dependencies, configure SSL/HTTPS, and deploy your live URL (e.g. `https://agri-gram-ai.onrender.com`).
+
+---
+
+## 📲 How to Install on Android Mobile (PWA)
+
+Once deployed on Render (or opened over HTTPS/localhost):
+
+### Option A: 1-Tap In-App Install
+1. Open your website URL in **Google Chrome** on your Android device.
+2. Tap the **"📲 Install Agri Gram App"** banner at the top of the login screen or top navbar.
+3. Tap **Install** in the Chrome prompt. The app icon will appear directly on your home screen and app drawer!
+
+### Option B: Chrome Menu ("Add to Home screen")
+1. Open your website URL in **Google Chrome** on Android.
+2. Tap the **three vertical dots (⋮)** in the top-right corner of Chrome.
+3. Tap **"Install app"** or **"Add to Home screen"**.
+4. Confirm by tapping **Add** / **Install**.
+5. Agri Gram AI will now open in full standalone app mode!
 
 ---
 

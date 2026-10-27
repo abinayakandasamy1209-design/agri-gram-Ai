@@ -20,12 +20,12 @@ try:
     online_db = _sup
     SUPABASE_OK = bool(_sup.test_connection())
 except Exception as e:
-    print(f"  Supabase unavailable at startup -> using local SQLite. ({e})")
+    SUPABASE_OK = False
 
 if SUPABASE_OK:
-    print("  Database mode: ONLINE (Supabase) with SQLite fallback")
+    print("  [DB] Database mode: ONLINE (Supabase) with SQLite fallback")
 else:
-    print("  Database mode: LOCAL (SQLite) - Supabase is paused/unreachable")
+    print("  [DB] Database mode: LOCAL (SQLite) - agri_gram.db ready")
 
 
 def _online():
@@ -38,28 +38,29 @@ def login_user(username, password):
     if _online():
         try:
             res = online_db.login_user(username, password)
-            if res.get("success"):
+            if res and res.get("success"):
                 return res
         except Exception as e:
-            print(f"  Supabase login error, falling back to SQLite: {e}")
+            pass
     # Fallback (also serves the seeded demo users: admin / farmer / abinaya ...)
     return local_db.login_user(username, password)
 
 
 def register_user(username, password, name, location="Coimbatore"):
+    # Always register in local DB first to guarantee persistence
+    local_res = local_db.register_user(username, password, name, location)
+    
+    # Mirror to Supabase if online
     if _online():
         try:
-            res = online_db.register_user(username, password, name, location)
-            if res.get("success"):
-                # mirror into local DB so offline login also works
-                try:
-                    local_db.register_user(username, password, name, location)
-                except Exception:
-                    pass
-            return res
-        except Exception as e:
-            print(f"  Supabase register error, falling back to SQLite: {e}")
-    return local_db.register_user(username, password, name, location)
+            online_res = online_db.register_user(username, password, name, location)
+            if online_res and online_res.get("success"):
+                return online_res
+        except Exception:
+            pass
+            
+    return local_res
+
 
 
 # ========== IoT DATA FUNCTIONS ==========
